@@ -1,0 +1,12 @@
+﻿hellorotuine.started,hellorotuine.stopped,hellokey.keys,hellokey.rt,hellokey.duration,participant,性別,年齡,台語檢定成績,date,expName,psychopyVersion,OS,frameRate,instructionroutine.started,instructionroutine.stopped,intructionkeyboard.keys,intructionkeyboard.rt,intructionkeyboard.duration,fixation.started,fixation.stopped,practiceroutine.started,practiceroutine.stopped,practrial.keys,trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,trials.ran,臺羅,isword,response,ifile,practrial.rt,practrial.duration,pracroutine.started,pracroutine.stopped,prackey.keys,prackey.rt,prackey.duration,trialroutine.started,trialroutine.stopped,trialkeyboard.keys,trialkeyboard.corr,trialloop.thisRepN,trialloop.thisTrialN,trialloop.thisN,trialloop.thisIndex,trialloop.ran,分組,台語詞頻分組,華語詞頻分組,漢字,trialloop.order
+0.0004,3.5317,space,3.5197,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,3.5318,8.0428,space,4.5006,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,8.045,8.543,8.5435,13.5424,,0,0,0,3,1,__,0,f,w97.png,,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,13.5427,14.0422,14.0425,19.0424,,0,1,1,1,1,__,0,f,w92.png,,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,19.0426,19.5453,19.5455,24.5389,,0,2,2,0,1,__,1,j,w40.png,,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,24.5394,25.0428,25.0431,28.8704,j,0,3,3,2,1,__,1,j,w49.png,3.8084,,,,,,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,,,,,,,,,,,,,,,,,28.8707,31.679,space,2.797,,,,,,,,,,,,,,,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,31.6816,32.1774,,,,,,,,,,0,f,w75.png,,,,,,,,32.1778,37.1758,,0,0,0,0,64,1,filler_假詞,,,野吉,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,37.1761,37.6757,,,,,,,,,liáu-kái,1,j,w7.png,,,,,,,,37.6758,42.6772,,0,0,1,1,6,1,實驗材料,懸,懸,了解,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,42.6775,43.177,,,,,,,,,gāi-gio̍h,1,j,w43.png,,,,,,,,43.1773,48.1785,,0,0,2,2,34,1,filler_純台語詞,,,礙虐,
+,,,,,117885,F,19,c1,2026-04-29_16h23.32.652,ldt,2025.1.1,Win32,178.5714286,,,,,,48.1791,48.6787,,,,,,,,,bân-phuê/bân-phê ,1,j,w42.png,,,,,,,,48.6792,,,,0,3,3,33,1,filler_純台語詞,,,蠻皮,79

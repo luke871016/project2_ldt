@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>台語雙音節 LDT 實驗 — 結果報告（初版）</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="ldt-report.js" defer></script>
+    <style>
+      :root {
+        --primary: #2c3e50;
+        --accent: #2980b9;
+        --red: #c0392b;
+        --green: #1e8449;
+        --light: #f7f9fc;
+        --border: #dde2e8;
+        --text: #2c3e50;
+        --subtext: #5d6d7e;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+        background: #f4f6f9;
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      }
+      nav .brand {
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 14px 14px 14px 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.18);
+        margin-right: 4px;
+      }
+      nav a {
+        color: rgba(255, 255, 255, 0.82);
+        text-decoration: none;
+        padding: 14px 11px;
+        font-size: 13px;
+      }
+      nav a:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      nav .nav-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+      }
+      nav button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      nav button:hover {
+        filter: brightness(1.08);
+      }
+      .page-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 20px 60px;
+      }
+      section {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin: 28px 0;
+        padding: 28px 32px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--primary);
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 18px;
+      }
+      h2 .sec-num {
+        display: inline-block;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 4px;
+        padding: 1px 9px;
+        font-size: 12px;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+      h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 16px 0 8px;
+      }
+      p,
+      .subtext {
+        color: var(--subtext);
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+      .note {
+        background: #ebf5fb;
+        border-left: 4px solid var(--accent);
+        padding: 10px 16px;
+        border-radius: 0 6px 6px 0;
+        margin: 12px 0;
+        font-size: 13.5px;
+        color: var(--subtext);
+      }
+      .stat-grid {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 16px 0;
+      }
+      .stat-card {
+        background: var(--light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 20px;
+        min-width: 130px;
+        text-align: center;
+      }
+      .stat-card .num {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .stat-card .lbl {
+        font-size: 12px;
+        color: var(--subtext);
+      }
+      .chart-wrap {
+        width: 100%;
+        min-height: 300px;
+        margin: 12px 0;
+      }
+      .chart-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .chart-row .chart-wrap {
+        flex: 1;
+        min-width: 260px;
+      }
+      #load-status {
+        font-size: 13px;
+        color: var(--subtext);
+        margin-top: 6px;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: flex-end;
+        margin: 14px 0 18px;
+      }
+      .toolbar label {
+        font-size: 13px;
+        color: var(--subtext);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .toolbar select {
+        min-width: 140px;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 13px;
+      }
+      .data-table-wrap {
+        overflow-x: auto;
+        margin: 12px 0;
+      }
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      table.data-table th {
+        background: var(--primary);
+        color: #fff;
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      table.data-table td {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+      }
+      table.data-table tbody tr:nth-child(even) {
+        background: var(--light);
+      }
+      .quality-block ul {
+        margin: 0 0 8px 18px;
+        color: var(--text);
+        font-size: 13.5px;
+      }
+      .quality-block ul.warn-list li {
+        color: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <span class="brand">台語雙音節 LDT</span>
+      <a href="#sec-summary">摘要</a>
+      <a href="#sec-demo">受試者分布</a>
+      <a href="#sec-group">依分組</a>
+      <a href="#sec-items">題目統計</a>
+      <a href="#sec-quality">資料品質</a>
+      <div class="nav-actions">
+        <button type="button" id="btn-reload">重新載入</button>
+      </div>
+    </nav>
+
+    <div class="page-wrap">
+      <header style="padding-top: 24px">
+        <h1>台語雙音節詞彙判斷（LDT）實驗結果</h1>
+        <p class="subtext">
+          僅納入已完成實驗（有 <code>thanksroutine.started</code>）之檔案；每位受試者固定以
+          80 題計。若某題逾時未按鍵，該列可能無按鍵欄位：報表視為錯誤、RT 以 5000
+          ms 計；若 CSV 整列遺失則依試次序號補齊同規則。請由專案根目錄啟動本機 HTTP
+          伺服器後開啟本頁（勿用 file://，否則無法載入 CSV）。
+        </p>
+      </header>
+
+      <section id="sec-summary">
+        <h2><span class="sec-num">1</span>載入摘要</h2>
+        <div id="stat-cards"></div>
+        <p id="load-status">準備載入…</p>
+      </section>
+
+      <section id="sec-demo">
+        <h2><span class="sec-num">2</span>受試者：年齡、性別、台語檢定</h2>
+        <p class="subtext">以下僅統計「完成實驗且 80 試次」之受試者。性別已將 M／F 等映射為男／女；其餘歸類為其他。</p>
+        <div class="chart-wrap" id="chart-age"></div>
+        <div class="chart-row">
+          <div class="chart-wrap" id="chart-gender"></div>
+          <div class="chart-wrap" id="chart-cert"></div>
+        </div>
+      </section>
+
+      <section id="sec-group">
+        <h2><span class="sec-num">3</span>依題目「分組」聚合</h2>
+        <p class="subtext">平均 RT 僅計算正確試次（常見 LDT 報告方式）；正確率含所有試次。</p>
+        <div class="chart-row">
+          <div class="chart-wrap" id="chart-by-group-rt"></div>
+          <div class="chart-wrap" id="chart-by-group-acc"></div>
+        </div>
+      </section>
+
+      <section id="sec-items">
+        <h2><span class="sec-num">4</span>題目層級：反應時間與正確率</h2>
+        <p class="subtext">
+          以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。表格中「平均
+          RT（全部）」含錯誤試次；「平均 RT（僅正確）」僅 corr=1；RT 標準差為試次層級之樣本標準差。
+        </p>
+        <div class="toolbar">
+          <label>
+            分組
+            <select id="filter-分組"></select>
+          </label>
+          <label>
+            isword（1 真／0 假）
+            <select id="filter-isword"></select>
+          </label>
+          <label>
+            台語詞頻分組
+            <select id="filter-tw"></select>
+          </label>
+          <label>
+            華語詞頻分組
+            <select id="filter-hua"></select>
+          </label>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>漢字</th>
+                <th>ifile</th>
+                <th>分組</th>
+                <th>isword</th>
+                <th>台語詞頻</th>
+                <th>華語詞頻</th>
+                <th>n 試次</th>
+                <th>正確率</th>
+                <th>平均 RT 全部（ms）</th>
+                <th>SD 全部（ms）</th>
+                <th>平均 RT 僅正確（ms）</th>
+                <th>SD 僅正確（ms）</th>
+              </tr>
+            </thead>
+            <tbody id="item-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sec-quality">
+        <h2><span class="sec-num">5</span>資料品質與排除說明</h2>
+        <div class="note">
+          未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
+          <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。
+        </div>
+        <div id="quality-detail"></div>
+      </section>
+    </div>
+
+    <script>
+      document.getElementById("btn-reload").addEventListener("click", function () {
+        if (typeof LDT_REPORT_RUN === "function") LDT_REPORT_RUN();
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof LDT_REPORT_RUN === "function") LDT_REPORT_RUN();
+      });
+    </script>
+  </body>
+</html>

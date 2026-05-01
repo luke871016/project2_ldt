@@ -1,0 +1,6 @@
+﻿hellorotuine.started,hellorotuine.stopped,hellokey.keys,hellokey.rt,hellokey.duration,participant,性別,年齡,台語檢定成績,date,expName,psychopyVersion,OS,frameRate,instructionroutine.started,instructionroutine.stopped,intructionkeyboard.keys,intructionkeyboard.rt,intructionkeyboard.duration,fixation.started,fixation.stopped,practiceroutine.started,practiceroutine.stopped,practrial.keys,trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,trials.ran,臺羅,isword,response,ifile,trials.order
+0.0002,21.6551,space,21.6392,,472283,男,20,教育部B卷205,2026-05-01_00h05.44.949,ldt,2025.1.1,Win32,142.8571429,,,,,,,,,,,,,,,,,,,,
+,,,,,472283,男,20,教育部B卷205,2026-05-01_00h05.44.949,ldt,2025.1.1,Win32,142.8571429,21.6553,29.6573,space,7.987,,,,,,,,,,,,,,,,
+,,,,,472283,男,20,教育部B卷205,2026-05-01_00h05.44.949,ldt,2025.1.1,Win32,142.8571429,,,,,,29.6621,30.1571,30.1576,35.1573,,0,0,0,3,1,__,0,f,w97.png,
+,,,,,472283,男,20,教育部B卷205,2026-05-01_00h05.44.949,ldt,2025.1.1,Win32,142.8571429,,,,,,35.1576,35.6566,35.6573,40.6568,,0,1,1,2,1,__,1,j,w49.png,
+,,,,,472283,男,20,教育部B卷205,2026-05-01_00h05.44.949,ldt,2025.1.1,Win32,142.8571429,,,,,,40.6574,41.1561,41.1571,,,0,2,2,1,1,__,0,f,w92.png,3
