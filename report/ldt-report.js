@@ -27,10 +27,22 @@
   }
 
   /** 圖表用等級順序：CEFR A1–C2、未考取；無法對應之原始填答暫歸「（待標準化）」並於品質區塊列出。 */
-  const CERT_ORDER = ["未考取", "A1", "A2", "B1", "B2", "C1", "C2", "（待標準化）"];
+  const CERT_ORDER = [
+    "未考取",
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1",
+    "C2",
+    "（待標準化）",
+  ];
 
   const plotlyLayoutBase = {
-    font: { family: '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif', size: 12 },
+    font: {
+      family: '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
+      size: 12,
+    },
     margin: { t: 36, r: 20, b: 48, l: 52 },
     paper_bgcolor: "#fff",
     plot_bgcolor: "#f7f9fc",
@@ -60,17 +72,20 @@
 
     const compact = t0.replace(/\s+/g, "");
     const lat = compact.toUpperCase();
-    if (/^(A1|A2|B1|B2|C1|C2)$/.test(lat)) return { level: lat, unmappedRaw: null };
+    if (/^(A1|A2|B1|B2|C1|C2)$/.test(lat))
+      return { level: lat, unmappedRaw: null };
 
     if (/^(無|沒有|沒考|未考|未考取|無檢定|N\/A|NA|NONE)$/i.test(t0)) {
       return { level: "未考取", unmappedRaw: null };
     }
 
     if (/教育部B卷205/i.test(t0)) return { level: "B1", unmappedRaw: null };
-    if (t0 === "教育部B1" || /^教育部\s*B1$/i.test(t0)) return { level: "B1", unmappedRaw: null };
+    if (t0 === "教育部B1" || /^教育部\s*B1$/i.test(t0))
+      return { level: "B1", unmappedRaw: null };
 
     if (t0 === "高級") return { level: "C1", unmappedRaw: null };
     if (t0 === "422") return { level: "C1", unmappedRaw: null };
+    if (t0 === "通過C2") return { level: "C2", unmappedRaw: null };
 
     if (/^[Bb]$/.test(t0)) return { level: "B1", unmappedRaw: null };
 
@@ -214,7 +229,13 @@
       if (byN.has(n)) {
         trials.push(rowToTrialObject(byN.get(n), participant, fileName));
       } else {
-        quality.push("缺 trialloop.thisN=" + n + " 列，已以 " + NO_RESPONSE_RT_MS + "ms、錯誤補齊");
+        quality.push(
+          "缺 trialloop.thisN=" +
+            n +
+            " 列，已以 " +
+            NO_RESPONSE_RT_MS +
+            "ms、錯誤補齊",
+        );
         trials.push(imputedMissingTrial(n, participant, fileName));
       }
     }
@@ -238,7 +259,11 @@
     const grp = trimStr(t.分組);
     const tw = trimStr(t.台語詞頻分組);
     const hua = trimStr(t.華語詞頻分組);
-    if (/filler_假詞/.test(grp) || (grp.includes("假詞") && !grp.includes("純台語"))) return "F";
+    if (
+      /filler_假詞/.test(grp) ||
+      (grp.includes("假詞") && !grp.includes("純台語"))
+    )
+      return "F";
     if (/filler_純台語/.test(grp) || grp.includes("純台語")) return "E";
     if (grp === "實驗材料" || grp.includes("共同")) {
       if (hua === "懸" && tw === "懸") return "A";
@@ -317,14 +342,19 @@
     }
 
     if (out.complete) {
-      out.trials = buildEightyTrialsFromRows(rawFormal, out.participant, name, out.quality);
+      out.trials = buildEightyTrialsFromRows(
+        rawFormal,
+        out.participant,
+        name,
+        out.quality,
+      );
       if (rawFormal.length !== EXPECTED_TRIALS) {
         out.quality.push(
           "CSV 內正式試次列數為 " +
             rawFormal.length +
             "（已補齊／逾時未答列並固定為 " +
             EXPECTED_TRIALS +
-            " 筆納入統計）"
+            " 筆納入統計）",
         );
       }
     } else {
@@ -349,7 +379,12 @@
       if (!f.complete) incomplete.push(f.fileName);
       if (f.complete && f.trials.length !== EXPECTED_TRIALS) {
         badTrialCount.push(
-          f.fileName + "（完成標記有誤：試次數=" + f.trials.length + "，預期 " + EXPECTED_TRIALS + "）"
+          f.fileName +
+            "（完成標記有誤：試次數=" +
+            f.trials.length +
+            "，預期 " +
+            EXPECTED_TRIALS +
+            "）",
         );
       }
       for (let q = 0; q < f.quality.length; q++) {
@@ -422,7 +457,9 @@
         b.corrs.push(t.corr);
       }
     }
-    const rest = Array.from(buckets.keys()).filter((k) => AB_GROUP_ORDER.indexOf(k) === -1);
+    const rest = Array.from(buckets.keys()).filter(
+      (k) => AB_GROUP_ORDER.indexOf(k) === -1,
+    );
     rest.sort();
     const labels = AB_GROUP_ORDER.filter((k) => buckets.has(k)).concat(rest);
     const meanRtCorr = labels.map((lab) => {
@@ -459,7 +496,12 @@
     if (!el) return;
     const valid = ages.filter((a) => Number.isFinite(a) && a > 0 && a < 120);
     if (!valid.length) {
-      Plotly.react(el, [], { ...plotlyLayoutBase, title: { text: title + "（無有效資料）" } }, { responsive: true });
+      Plotly.react(
+        el,
+        [],
+        { ...plotlyLayoutBase, title: { text: title + "（無有效資料）" } },
+        { responsive: true },
+      );
       return;
     }
     Plotly.react(
@@ -478,7 +520,7 @@
         xaxis: { title: "年齡（歲）" },
         yaxis: { title: "人數" },
       },
-      { responsive: true }
+      { responsive: true },
     );
   }
 
@@ -501,7 +543,7 @@
         xaxis: { title: xTitle },
         yaxis: { title: "人數" },
       },
-      { responsive: true }
+      { responsive: true },
     );
   }
 
@@ -509,7 +551,9 @@
     const el = document.getElementById(elId);
     if (!el) return;
     const y = labels.map((_, i) => (rtMs[i] == null ? null : rtMs[i]));
-    const text = labels.map((_, i) => (rtMs[i] == null ? "—" : Math.round(rtMs[i]) + " ms"));
+    const text = labels.map((_, i) =>
+      rtMs[i] == null ? "—" : Math.round(rtMs[i]) + " ms",
+    );
     const customdata = labels.map((lab) => [abGroupDefinitionText(lab)]);
     Plotly.react(
       el,
@@ -534,7 +578,7 @@
         margin: { ...plotlyLayoutBase.margin, b: 56 },
         hoverlabel: { align: "left", font: { size: 12 } },
       },
-      { responsive: true }
+      { responsive: true },
     );
   }
 
@@ -549,7 +593,9 @@
           type: "bar",
           x: labels,
           y: acc.map((a) => (Number.isFinite(a) ? a * 100 : null)),
-          text: acc.map((a) => (Number.isFinite(a) ? (a * 100).toFixed(1) + "%" : "—")),
+          text: acc.map((a) =>
+            Number.isFinite(a) ? (a * 100).toFixed(1) + "%" : "—",
+          ),
           textposition: "outside",
           marker: { color: "#1e8449" },
           customdata,
@@ -565,7 +611,7 @@
         margin: { ...plotlyLayoutBase.margin, b: 56 },
         hoverlabel: { align: "left", font: { size: 12 } },
       },
-      { responsive: true }
+      { responsive: true },
     );
   }
 
@@ -576,7 +622,9 @@
     for (let i = 0; i < AB_GROUP_ORDER.length; i++) {
       if (present.has(AB_GROUP_ORDER[i])) ordered.push(AB_GROUP_ORDER[i]);
     }
-    const rest = Array.from(present).filter((k) => AB_GROUP_ORDER.indexOf(k) === -1);
+    const rest = Array.from(present).filter(
+      (k) => AB_GROUP_ORDER.indexOf(k) === -1,
+    );
     rest.sort();
     return ordered.concat(rest);
   }
@@ -585,7 +633,8 @@
   function stimWordTypeBadge(isword) {
     const s = String(isword).trim();
     if (s === "1") return { text: "真詞", cls: "stim-badge stim-badge--real" };
-    if (s === "0") return { text: "假詞", cls: "stim-badge stim-badge--pseudo" };
+    if (s === "0")
+      return { text: "假詞", cls: "stim-badge stim-badge--pseudo" };
     return null;
   }
 
@@ -597,9 +646,7 @@
     return "stim-tag stim-tag--freq-other";
   }
 
-  function renderBrowseAbCards(host, itemMap, letter) {
-    if (!host) return;
-    host.innerHTML = "";
+  function browseSortedItemsForLetter(itemMap, letter) {
     const items = [];
     itemMap.forEach((rec) => {
       if ((rec.ab組 || AB_GROUP_OTHER) !== letter) return;
@@ -610,6 +657,74 @@
       const kb = String(b.ifile || b.漢字 || b.臺羅 || "");
       return ka.localeCompare(kb, "zh-Hant");
     });
+    return items;
+  }
+
+  /** 該組共通的真／假詞與詞頻（顯示於選單上方） */
+  function renderBrowseGroupSummary(host, items) {
+    if (!host) return;
+    host.innerHTML = "";
+    if (!items.length) {
+      host.style.display = "none";
+      return;
+    }
+    const isSet = new Set();
+    const twSet = new Set();
+    const huaSet = new Set();
+    for (let i = 0; i < items.length; i++) {
+      const r = items[i];
+      const iw = String(r.isword).trim();
+      if (iw !== "") isSet.add(iw);
+      const t = trimStr(r.台語詞頻分組);
+      const h = trimStr(r.華語詞頻分組);
+      if (t) twSet.add(t);
+      if (h) huaSet.add(h);
+    }
+    const bar = document.createElement("div");
+    bar.className = "browse-group-summary";
+    const isArr = Array.from(isSet).sort();
+    for (let j = 0; j < isArr.length; j++) {
+      const b = stimWordTypeBadge(isArr[j]);
+      if (b) {
+        const span = document.createElement("span");
+        span.className = b.cls;
+        span.textContent = b.text;
+        bar.appendChild(span);
+      }
+    }
+    if (isArr.length > 1) {
+      const w = document.createElement("span");
+      w.className = "browse-group-summary-warn";
+      w.textContent = "（組內 isword 不一致）";
+      bar.appendChild(w);
+    }
+    const twArr = Array.from(twSet).sort((a, b) => a.localeCompare(b, "zh-Hant"));
+    const huaArr = Array.from(huaSet).sort((a, b) =>
+      a.localeCompare(b, "zh-Hant"),
+    );
+    for (let j = 0; j < twArr.length; j++) {
+      const sp = document.createElement("span");
+      sp.className = stimFreqTagClass(twArr[j]);
+      sp.textContent = "台語詞頻：" + twArr[j];
+      bar.appendChild(sp);
+    }
+    for (let j = 0; j < huaArr.length; j++) {
+      const sp = document.createElement("span");
+      sp.className = stimFreqTagClass(huaArr[j]);
+      sp.textContent = "華語詞頻：" + huaArr[j];
+      bar.appendChild(sp);
+    }
+    if (!bar.firstChild) {
+      host.style.display = "none";
+      return;
+    }
+    host.appendChild(bar);
+    host.style.display = "";
+  }
+
+  function renderBrowseAbCards(host, items) {
+    if (!host) return;
+    host.innerHTML = "";
     if (!items.length) {
       const p = document.createElement("p");
       p.className = "subtext";
@@ -623,64 +738,37 @@
       const rec = items[i];
       const han = trimStr(rec.漢字);
       const tl = trimStr(rec.臺羅);
-      const twFreq = trimStr(rec.台語詞頻分組);
-      const huaFreq = trimStr(rec.華語詞頻分組);
-      const badge = stimWordTypeBadge(rec.isword);
-
-      const inner = document.createElement("div");
-      inner.className = "stim-card-inner";
+      const card = document.createElement("article");
+      card.className = "stim-card";
       if (han) {
         const el = document.createElement("div");
         el.className = "stim-han";
         el.textContent = han;
-        inner.appendChild(el);
+        card.appendChild(el);
       }
       if (tl) {
         const el = document.createElement("div");
         el.className = "stim-tl";
         el.textContent = tl;
-        inner.appendChild(el);
+        card.appendChild(el);
       }
-
-      if (twFreq || huaFreq) {
-        const tags = document.createElement("div");
-        tags.className = "stim-tags";
-        if (twFreq) {
-          const t = document.createElement("span");
-          t.className = stimFreqTagClass(twFreq);
-          t.textContent = "台語詞頻：" + twFreq;
-          tags.appendChild(t);
-        }
-        if (huaFreq) {
-          const t = document.createElement("span");
-          t.className = stimFreqTagClass(huaFreq);
-          t.textContent = "華語詞頻：" + huaFreq;
-          tags.appendChild(t);
-        }
-        inner.appendChild(tags);
-      }
-
-      if (!inner.firstChild && !badge) continue;
-
-      const card = document.createElement("article");
-      card.className = "stim-card" + (badge ? "" : " stim-card--no-badge");
-      if (badge) {
-        const b = document.createElement("span");
-        b.className = badge.cls;
-        b.textContent = badge.text;
-        card.appendChild(b);
-      }
-      if (inner.firstChild) card.appendChild(inner);
+      if (!card.firstChild) continue;
       grid.appendChild(card);
     }
     if (!grid.children.length) {
       const p = document.createElement("p");
       p.className = "subtext";
-      p.textContent = "此組題目在資料中尚無漢字、臺羅或詞頻欄位可顯示。";
+      p.textContent = "此組題目在資料中尚無漢字或臺羅可顯示。";
       host.appendChild(p);
       return;
     }
     host.appendChild(grid);
+  }
+
+  function refreshBrowseStimuli(summaryHost, cardsHost, itemMap, letter) {
+    const items = browseSortedItemsForLetter(itemMap, letter);
+    if (summaryHost) renderBrowseGroupSummary(summaryHost, items);
+    if (cardsHost) renderBrowseAbCards(cardsHost, items);
   }
 
   function uniqueSorted(values) {
@@ -707,7 +795,8 @@
       o.textContent = options[i];
       sel.appendChild(o);
     }
-    if (cur && Array.prototype.some.call(sel.options, (op) => op.value === cur)) sel.value = cur;
+    if (cur && Array.prototype.some.call(sel.options, (op) => op.value === cur))
+      sel.value = cur;
   }
 
   function fmtNum(x, digits) {
@@ -715,49 +804,240 @@
     return x.toFixed(digits);
   }
 
-  function renderItemTable(tbody, itemMap, filters) {
-    tbody.innerHTML = "";
+  /** 正確率（0/1 試次）之樣本標準差，供橫條上標示離散度 */
+  function accuracySdFromCorrs(corrs) {
+    if (!corrs || corrs.length < 2) return NaN;
+    return sdSample(corrs);
+  }
+
+  function pctClamp01(x) {
+    if (!Number.isFinite(x)) return 0;
+    return Math.max(0, Math.min(100, x));
+  }
+
+  function collectItemRowsByAb(itemMap, abFilter) {
     const rows = [];
     itemMap.forEach((rec) => {
-      if (filters.ab組 && rec.ab組 !== filters.ab組) return;
-      if (filters.分組 && rec.分組 !== filters.分組) return;
-      if (filters.isword !== "" && String(rec.isword) !== filters.isword) return;
-      if (filters.tw && (rec.台語詞頻分組 || "（空白）") !== filters.tw) return;
-      if (filters.hua && (rec.華語詞頻分組 || "（空白）") !== filters.hua) return;
+      if (abFilter && rec.ab組 !== abFilter) return;
       rows.push(rec);
     });
-    rows.sort((a, b) => {
+    return rows;
+  }
+
+  function sortItemRowsForDisplay(rows, sortMode) {
+    const sorted = rows.slice();
+    sorted.sort((a, b) => {
       const sa = itemRowStats(a);
       const sb = itemRowStats(b);
-      return (sb.n || 0) - (sa.n || 0);
-    });
-
-    for (let i = 0; i < rows.length; i++) {
-      const rec = rows[i];
-      const st = itemRowStats(rec);
-      const tr = document.createElement("tr");
-      const cells = [
-        rec.漢字 || "—",
-        rec.ifile || "—",
-        rec.ab組 || "—",
-        rec.分組 || "—",
-        String(rec.isword !== "" ? rec.isword : "—"),
-        rec.台語詞頻分組 || "—",
-        rec.華語詞頻分組 || "—",
-        String(st.n),
-        fmtNum(st.acc * 100, 1) + "%",
-        fmtNum(st.mAll, 0),
-        fmtNum(st.sdAll, 0),
-        fmtNum(st.mCor, 0),
-        fmtNum(st.sdCor, 0),
-      ];
-      for (let c = 0; c < cells.length; c++) {
-        const td = document.createElement("td");
-        td.textContent = cells[c];
-        tr.appendChild(td);
+      if (sortMode === "acc") {
+        const cmp = (sb.acc || 0) - (sa.acc || 0);
+        if (cmp !== 0) return cmp;
+      } else {
+        const raRt = Number.isFinite(sa.mCor) ? sa.mCor : sa.mAll;
+        const rbRt = Number.isFinite(sb.mCor) ? sb.mCor : sb.mAll;
+        const ra = Number.isFinite(raRt) ? raRt : Infinity;
+        const rb = Number.isFinite(rbRt) ? rbRt : Infinity;
+        if (ra !== rb) return ra - rb;
       }
-      tbody.appendChild(tr);
+      const ka = String(a.ifile || a.漢字 || a.臺羅 || "");
+      const kb = String(b.ifile || b.漢字 || b.臺羅 || "");
+      return ka.localeCompare(kb, "zh-Hant");
+    });
+    return sorted;
+  }
+
+  function sdForRtDisplay(rec, st) {
+    if (Number.isFinite(st.mCor)) {
+      if (rec.rtsCorrect.length >= 2 && Number.isFinite(st.sdCor))
+        return st.sdCor;
+      return NaN;
     }
+    if (rec.rts.length >= 2 && Number.isFinite(st.sdAll)) return st.sdAll;
+    return NaN;
+  }
+
+  function computeRtBarScaleMs(sortedRows) {
+    let rtMax = 0;
+    for (let i = 0; i < sortedRows.length; i++) {
+      const rec = sortedRows[i];
+      const st = itemRowStats(rec);
+      const m = Number.isFinite(st.mCor) ? st.mCor : st.mAll;
+      const sd = sdForRtDisplay(rec, st);
+      const hi =
+        Number.isFinite(m) && Number.isFinite(sd) ? m + sd : m;
+      if (Number.isFinite(hi) && hi > rtMax) rtMax = hi;
+    }
+    if (!Number.isFinite(rtMax) || rtMax < 400) rtMax = 800;
+    if (rtMax > 6000) rtMax = 6000;
+    return rtMax;
+  }
+
+  function appendBarRowMetric(
+    card,
+    label,
+    sdBandLeftPct,
+    sdBandWidthPct,
+    fillPct,
+    fillMod,
+    valueLine,
+    sdLine,
+  ) {
+    const block = document.createElement("div");
+    block.className = "item-metric";
+    const hd = document.createElement("div");
+    hd.className = "item-metric-hd";
+    const lab = document.createElement("span");
+    lab.className = "item-metric-label";
+    lab.textContent = label;
+    hd.appendChild(lab);
+    const val = document.createElement("span");
+    val.className = "item-metric-val";
+    val.textContent = valueLine;
+    hd.appendChild(val);
+    const sdEl = document.createElement("span");
+    sdEl.className = "item-metric-sd";
+    sdEl.textContent = sdLine;
+    hd.appendChild(sdEl);
+    block.appendChild(hd);
+
+    const row = document.createElement("div");
+    row.className = "item-bar-row";
+    const track = document.createElement("div");
+    track.className = "item-bar-track";
+    if (
+      Number.isFinite(sdBandWidthPct) &&
+      sdBandWidthPct > 0 &&
+      Number.isFinite(sdBandLeftPct)
+    ) {
+      const band = document.createElement("div");
+      band.className = "item-bar-sd-band";
+      band.style.left = pctClamp01(sdBandLeftPct) + "%";
+      band.style.width = pctClamp01(sdBandWidthPct) + "%";
+      track.appendChild(band);
+    }
+    const fill = document.createElement("div");
+    fill.className = "item-bar-fill " + fillMod;
+    fill.style.width = pctClamp01(fillPct) + "%";
+    track.appendChild(fill);
+    row.appendChild(track);
+    block.appendChild(row);
+    card.appendChild(block);
+  }
+
+  function renderItemCards(host, itemMap, abFilter, sortMode) {
+    if (!host) return;
+    host.innerHTML = "";
+    const rows = collectItemRowsByAb(itemMap, abFilter);
+    const sorted = sortItemRowsForDisplay(rows, sortMode || "rt");
+    const rtMax = computeRtBarScaleMs(sorted);
+
+    if (!sorted.length) {
+      const p = document.createElement("p");
+      p.className = "subtext";
+      p.textContent = "無符合條件的題目。";
+      host.appendChild(p);
+      return;
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "item-stat-grid";
+    for (let i = 0; i < sorted.length; i++) {
+      const rec = sorted[i];
+      const st = itemRowStats(rec);
+      const card = document.createElement("article");
+      card.className = "item-stat-card";
+
+      const head = document.createElement("div");
+      head.className = "item-stat-card-head";
+      const ab = document.createElement("span");
+      ab.className = "item-stat-ab";
+      ab.textContent = rec.ab組 || "—";
+      head.appendChild(ab);
+      const titles = document.createElement("div");
+      titles.className = "item-stat-titles";
+      const han = trimStr(rec.漢字);
+      const tl = trimStr(rec.臺羅);
+      if (han) {
+        const h = document.createElement("div");
+        h.className = "stim-han";
+        h.textContent = han;
+        titles.appendChild(h);
+      }
+      if (tl) {
+        const t = document.createElement("div");
+        t.className = "stim-tl";
+        t.textContent = tl;
+        titles.appendChild(t);
+      }
+      head.appendChild(titles);
+      card.appendChild(head);
+
+      const ifile = trimStr(rec.ifile);
+      if (ifile) {
+        const meta = document.createElement("div");
+        meta.className = "item-stat-ifile";
+        meta.textContent = ifile;
+        card.appendChild(meta);
+      }
+      const nEl = document.createElement("div");
+      nEl.className = "item-stat-n";
+      nEl.textContent = "n = " + String(st.n);
+      card.appendChild(nEl);
+
+      const accMean = st.acc;
+      const sdAcc = accuracySdFromCorrs(rec.corrs);
+      const accMeanPct = Number.isFinite(accMean) ? accMean * 100 : 0;
+      const sdAccPct = Number.isFinite(sdAcc) ? sdAcc * 100 : 0;
+      const accSdLeftRaw = accMeanPct - sdAccPct;
+      const accSdRightRaw = accMeanPct + sdAccPct;
+      const accSdLeft = pctClamp01(accSdLeftRaw);
+      const accSdRight = pctClamp01(accSdRightRaw);
+      const accSdW = Math.max(0, accSdRight - accSdLeft);
+      const accVal =
+        (Number.isFinite(accMean) ? fmtNum(accMean * 100, 1) : "—") + "%";
+      const accSdTxt =
+        Number.isFinite(sdAcc) ? "SD " + fmtNum(sdAcc * 100, 1) + "%" : "SD —";
+      appendBarRowMetric(
+        card,
+        "正確率",
+        accSdLeft,
+        accSdW,
+        accMeanPct,
+        "item-bar-fill--acc",
+        accVal,
+        accSdTxt,
+      );
+
+      const mRt = Number.isFinite(st.mCor) ? st.mCor : st.mAll;
+      const sdRt = sdForRtDisplay(rec, st);
+      const rtLabel = Number.isFinite(st.mCor) ? "平均 RT（僅正確）" : "平均 RT（全部）";
+      const mPct = Number.isFinite(mRt) && rtMax > 0 ? (mRt / rtMax) * 100 : 0;
+      const sdHalfPct =
+        Number.isFinite(sdRt) && Number.isFinite(mRt) && rtMax > 0
+          ? (sdRt / rtMax) * 100
+          : 0;
+      const rtSdLeftRaw = mPct - sdHalfPct;
+      const rtSdRightRaw = mPct + sdHalfPct;
+      const rtSdLeft = pctClamp01(rtSdLeftRaw);
+      const rtSdRight = pctClamp01(rtSdRightRaw);
+      const rtSdW = Math.max(0, rtSdRight - rtSdLeft);
+      const rtVal =
+        (Number.isFinite(mRt) ? fmtNum(mRt, 0) : "—") + " ms";
+      const rtSdTxt = Number.isFinite(sdRt) ? "SD " + fmtNum(sdRt, 0) + " ms" : "SD —";
+      appendBarRowMetric(
+        card,
+        rtLabel,
+        rtSdLeft,
+        rtSdW,
+        mPct,
+        "item-bar-fill--rt",
+        rtVal,
+        rtSdTxt,
+      );
+
+      grid.appendChild(card);
+    }
+    host.appendChild(grid);
   }
 
   function renderQualityTables(host, q, certUnmappedLines) {
@@ -781,7 +1061,10 @@
       ul.className = cls || "";
       for (let i = 0; i < items.length; i++) {
         const li = document.createElement("li");
-        li.textContent = typeof items[i] === "string" ? items[i] : items[i].file + " — " + items[i].msg;
+        li.textContent =
+          typeof items[i] === "string"
+            ? items[i]
+            : items[i].file + " — " + items[i].msg;
         ul.appendChild(li);
       }
       wrap.appendChild(ul);
@@ -795,7 +1078,7 @@
       block(
         "台語檢定成績：尚無標準化規則之原始填答（圖表暫歸「（待標準化）」；可於 ldt-report.js 的 normalizeCert 增列對應）",
         certUnmappedLines,
-        "warn-list"
+        "warn-list",
       );
     }
     block("其他提示", q.other);
@@ -805,11 +1088,8 @@
     const statusEl = document.getElementById("load-status");
     const cardsEl = document.getElementById("stat-cards");
     const qualityHost = document.getElementById("quality-detail");
-    const tbody = document.getElementById("item-table-body");
-    const sel分組 = document.getElementById("filter-分組");
-    const selIsword = document.getElementById("filter-isword");
-    const selTw = document.getElementById("filter-tw");
-    const selHua = document.getElementById("filter-hua");
+    const itemCardsHost = document.getElementById("item-cards-host");
+    const selItemSort = document.getElementById("filter-item-sort");
 
     statusEl.textContent = "載入清單…";
 
@@ -819,7 +1099,8 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       manifest = await res.json();
     } catch (e) {
-      statusEl.textContent = "無法載入 data-manifest.json：" + (e && e.message ? e.message : e);
+      statusEl.textContent =
+        "無法載入 data-manifest.json：" + (e && e.message ? e.message : e);
       return;
     }
 
@@ -851,7 +1132,7 @@
     }
 
     const completed = files.filter(
-      (f) => f.ok && f.complete && f.trials.length === EXPECTED_TRIALS
+      (f) => f.ok && f.complete && f.trials.length === EXPECTED_TRIALS,
     );
     const q = mergeQuality(files);
 
@@ -872,15 +1153,21 @@
           completed[i].fileName +
             "：原始填答「" +
             certNorm.unmappedRaw +
-            "」尚無標準化規則，圖表暫歸「（待標準化）」"
+            "」尚無標準化規則，圖表暫歸「（待標準化）」",
         );
       }
     }
 
     const genderLabels = ["男", "女", "其他", "未知"];
-    const genderCounts = genderLabels.map((g) => genders.filter((x) => x === g).length);
-    const uniqCert = Array.from(new Set(certs)).sort((a, b) => certSortKey(a) - certSortKey(b));
-    const certCounts = uniqCert.map((lab) => certs.filter((c) => c === lab).length);
+    const genderCounts = genderLabels.map(
+      (g) => genders.filter((x) => x === g).length,
+    );
+    const uniqCert = Array.from(new Set(certs)).sort(
+      (a, b) => certSortKey(a) - certSortKey(b),
+    );
+    const certCounts = uniqCert.map(
+      (lab) => certs.filter((c) => c === lab).length,
+    );
 
     const totalTrials = completed.reduce((s, f) => s + f.trials.length, 0);
 
@@ -893,45 +1180,92 @@
     });
 
     plotHistogram("chart-age", ages, "年齡分布（完成實驗者）");
-    plotBarCounts("chart-gender", genderLabels, genderCounts, "性別分布（正規化後）", "類別");
-    plotBarCounts("chart-cert", uniqCert, certCounts, "台語檢定最高等級（標準化：未考取／A1–C2）", "等級");
+    plotBarCounts(
+      "chart-gender",
+      genderLabels,
+      genderCounts,
+      "性別分布（正規化後）",
+      "類別",
+    );
+    plotBarCounts(
+      "chart-cert",
+      uniqCert,
+      certCounts,
+      "台語檢定最高等級（標準化：未考取／A1–C2）",
+      "等級",
+    );
 
     const grp = aggregateByAbGroup(completed);
     plotGroupRt("chart-by-group-rt", grp.labels, grp.meanRtCorr);
     plotGroupAcc("chart-by-group-acc", grp.labels, grp.meanAcc);
 
     const itemMap = buildItemMap(completed);
-    const all分組 = uniqueSorted(
-      Array.from(itemMap.values()).map((r) => r.分組 || "（空白）")
-    );
     const allAb = abGroupsInItemMap(itemMap);
-    const allIs = uniqueSorted(Array.from(itemMap.values()).map((r) => String(r.isword)));
-    const allTw = uniqueSorted(Array.from(itemMap.values()).map((r) => r.台語詞頻分組));
-    const allHua = uniqueSorted(Array.from(itemMap.values()).map((r) => r.華語詞頻分組));
 
     const selAb = document.getElementById("filter-ab組");
     const browseSel = document.getElementById("browse-ab-select");
     const browseHost = document.getElementById("browse-ab-cards-host");
+    const browseSummaryHost = document.getElementById(
+      "browse-group-summary-host",
+    );
+    const browseNavRow = document.getElementById("browse-nav-row");
+    const browsePrev = document.getElementById("browse-ab-prev");
+    const browseNext = document.getElementById("browse-ab-next");
 
     if (selAb) fillSelect(selAb, allAb, true);
-    fillSelect(sel分組, all分組, true);
-    fillSelect(selIsword, allIs, true);
-    fillSelect(selTw, allTw, true);
-    fillSelect(selHua, allHua, true);
 
     if (browseSel && browseHost) {
+      function syncBrowseNavButtons() {
+        if (!browseSel || !browsePrev || !browseNext) return;
+        let n = 0;
+        for (let i = 0; i < browseSel.options.length; i++) {
+          if (browseSel.options[i].value !== "") n++;
+        }
+        const dis = n <= 1;
+        browsePrev.disabled = dis;
+        browseNext.disabled = dis;
+      }
+      function moveBrowseGroup(delta) {
+        if (!browseSel) return;
+        const vals = [];
+        for (let i = 0; i < browseSel.options.length; i++) {
+          const v = browseSel.options[i].value;
+          if (v !== "") vals.push(v);
+        }
+        if (!vals.length) return;
+        let idx = vals.indexOf(browseSel.value);
+        if (idx < 0) idx = 0;
+        idx = (idx + delta + vals.length) % vals.length;
+        browseSel.value = vals[idx];
+        refreshBrowseStimuli(
+          browseSummaryHost,
+          browseHost,
+          itemMap,
+          browseSel.value,
+        );
+        syncBrowseNavButtons();
+      }
+
       browseSel.innerHTML = "";
       if (!allAb.length) {
+        if (browseNavRow) browseNavRow.style.display = "none";
+        if (browsePrev) browsePrev.onclick = null;
+        if (browseNext) browseNext.onclick = null;
         const o = document.createElement("option");
         o.value = "";
         o.textContent = "（無完成資料之題目）";
         browseSel.appendChild(o);
         browseHost.innerHTML = "";
+        if (browseSummaryHost) {
+          browseSummaryHost.innerHTML = "";
+          browseSummaryHost.style.display = "none";
+        }
         const p = document.createElement("p");
         p.className = "subtext";
         p.textContent = "尚無已完成實驗之 CSV，無法列出題目。";
         browseHost.appendChild(p);
       } else {
+        if (browseNavRow) browseNavRow.style.display = "flex";
         for (let i = 0; i < allAb.length; i++) {
           const lab = allAb[i];
           const o = document.createElement("option");
@@ -940,30 +1274,39 @@
           browseSel.appendChild(o);
         }
         browseSel.value = allAb[0];
-        renderBrowseAbCards(browseHost, itemMap, browseSel.value);
+        refreshBrowseStimuli(
+          browseSummaryHost,
+          browseHost,
+          itemMap,
+          browseSel.value,
+        );
+        syncBrowseNavButtons();
         browseSel.onchange = function () {
-          renderBrowseAbCards(browseHost, itemMap, browseSel.value);
+          refreshBrowseStimuli(
+            browseSummaryHost,
+            browseHost,
+            itemMap,
+            browseSel.value,
+          );
+          syncBrowseNavButtons();
         };
+        if (browsePrev) browsePrev.onclick = () => moveBrowseGroup(-1);
+        if (browseNext) browseNext.onclick = () => moveBrowseGroup(1);
       }
     }
 
-    function applyFilters() {
-      renderItemTable(tbody, itemMap, {
-        ab組: selAb ? selAb.value : "",
-        分組: sel分組.value,
-        isword: selIsword.value,
-        tw: selTw.value,
-        hua: selHua.value,
-      });
+    function applyItemCards() {
+      if (!itemCardsHost) return;
+      const ab = selAb ? selAb.value : "";
+      const sortMode =
+        selItemSort && selItemSort.value === "acc" ? "acc" : "rt";
+      renderItemCards(itemCardsHost, itemMap, ab, sortMode);
     }
 
-    if (selAb) selAb.onchange = applyFilters;
-    sel分組.onchange = applyFilters;
-    selIsword.onchange = applyFilters;
-    selTw.onchange = applyFilters;
-    selHua.onchange = applyFilters;
+    if (selAb) selAb.onchange = applyItemCards;
+    if (selItemSort) selItemSort.onchange = applyItemCards;
 
-    applyFilters();
+    applyItemCards();
     renderQualityTables(qualityHost, q, certUnmappedLines);
 
     statusEl.textContent =

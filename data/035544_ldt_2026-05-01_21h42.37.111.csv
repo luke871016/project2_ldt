@@ -1,0 +1,5 @@
+﻿hellorotuine.started,hellorotuine.stopped,hellokey.keys,hellokey.rt,hellokey.duration,participant,性別,年齡,台語檢定成績,date,expName,psychopyVersion,OS,frameRate,instructionroutine.started,instructionroutine.stopped,intructionkeyboard.keys,intructionkeyboard.rt,intructionkeyboard.duration,fixation.started,fixation.stopped,practiceroutine.started,practiceroutine.stopped,practrial.keys,practrial.rt,practrial.duration,trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,trials.ran,臺羅,isword,response,ifile,trials.order
+0.0003,17.2158,space,17.1827,,035544,查埔,57,高級,2026-05-01_21h42.37.111,ldt,2025.1.1,Win32,59.88023952,,,,,,,,,,,,,,,,,,,,,,
+,,,,,035544,查埔,57,高級,2026-05-01_21h42.37.111,ldt,2025.1.1,Win32,59.88023952,17.2164,32.5187,space,15.2701,,,,,,,,,,,,,,,,,,
+,,,,,035544,查埔,57,高級,2026-05-01_21h42.37.111,ldt,2025.1.1,Win32,59.88023952,,,,,,32.5351,33.0177,33.0193,35.9019,j,2.8128,,0,0,0,3,1,__,0,f,w97.png,
+,,,,,035544,查埔,57,高級,2026-05-01_21h42.37.111,ldt,2025.1.1,Win32,59.88023952,,,,,,35.9029,36.4015,36.4021,,,,,0,1,1,1,1,__,0,f,w92.png,3

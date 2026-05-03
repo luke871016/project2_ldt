@@ -249,32 +249,90 @@
       #browse-ab-cards-host {
         margin-top: 10px;
       }
+      .browse-nav-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 10px 12px;
+        margin-bottom: 12px;
+      }
+      .browse-nav-row .browse-nav-btn {
+        min-width: 40px;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--primary);
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .browse-nav-row .browse-nav-btn:hover:not(:disabled) {
+        background: var(--light);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .browse-nav-row .browse-nav-btn:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+      }
+      .browse-nav-row .browse-nav-center {
+        flex: 1;
+        min-width: 160px;
+      }
+      .browse-nav-row .browse-nav-center label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--subtext);
+      }
+      .browse-nav-row select {
+        min-width: 140px;
+        max-width: 100%;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 13px;
+      }
+      .browse-group-summary-host {
+        margin-bottom: 12px;
+      }
+      .browse-group-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        padding: 2px 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+      }
+      .browse-group-summary-warn {
+        font-size: 12px;
+        color: var(--red);
+        font-weight: 600;
+      }
       .browse-stim-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 14px;
       }
       .stim-card {
-        position: relative;
         background: linear-gradient(160deg, #fff 0%, var(--light) 100%);
         border: 1px solid var(--border);
         border-radius: 10px;
         padding: 14px 14px 14px;
         box-sizing: border-box;
         box-shadow: 0 1px 3px rgba(44, 62, 80, 0.08);
-        min-height: 88px;
-      }
-      .stim-card-inner {
-        padding-right: 68px;
-      }
-      .stim-card--no-badge .stim-card-inner {
-        padding-right: 0;
+        min-height: 72px;
       }
       .stim-badge {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 1;
+        display: inline-block;
         font-size: 11px;
         font-weight: 700;
         padding: 4px 10px;
@@ -308,13 +366,6 @@
         word-break: break-word;
         font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
       }
-      .stim-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-        align-items: center;
-      }
       .stim-tag {
         display: inline-block;
         font-size: 12px;
@@ -337,6 +388,151 @@
         background: var(--light);
         color: var(--text);
         border: 1px solid var(--border);
+      }
+      .item-cards-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        align-items: flex-end;
+        margin-bottom: 18px;
+      }
+      .item-cards-toolbar label {
+        font-size: 13px;
+        color: var(--subtext);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .item-cards-toolbar select {
+        min-width: 160px;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 13px;
+      }
+      .item-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+      }
+      .item-stat-card {
+        background: linear-gradient(160deg, #fff 0%, var(--light) 100%);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 14px 16px;
+        box-shadow: 0 1px 3px rgba(44, 62, 80, 0.08);
+      }
+      .item-stat-card-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .item-stat-ab {
+        flex-shrink: 0;
+        min-width: 2rem;
+        text-align: center;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .item-stat-titles {
+        flex: 1;
+        min-width: 0;
+      }
+      .item-stat-card .stim-han {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1.35;
+        margin: 0 0 4px;
+        word-break: break-word;
+      }
+      .item-stat-card .stim-tl {
+        font-size: 1.22rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.35;
+        word-break: break-word;
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
+      }
+      .item-stat-ifile {
+        font-size: 12px;
+        color: var(--subtext);
+        margin-top: 4px;
+        word-break: break-all;
+      }
+      .item-stat-n {
+        font-size: 12px;
+        color: var(--subtext);
+        margin-top: 2px;
+      }
+      .item-metric {
+        margin-top: 10px;
+      }
+      .item-metric-hd {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 10px;
+        margin-bottom: 5px;
+        font-size: 12px;
+      }
+      .item-metric-label {
+        color: var(--subtext);
+        font-weight: 600;
+      }
+      .item-metric-val {
+        color: var(--text);
+        font-weight: 700;
+      }
+      .item-metric-sd {
+        color: var(--subtext);
+        font-size: 11px;
+        margin-left: auto;
+      }
+      .item-bar-row {
+        margin-top: 2px;
+      }
+      .item-bar-track {
+        position: relative;
+        height: 24px;
+        border-radius: 6px;
+        background: #e8ecf1;
+        overflow: hidden;
+      }
+      .item-bar-sd-band {
+        position: absolute;
+        top: 3px;
+        height: 18px;
+        border-radius: 4px;
+        z-index: 1;
+        box-sizing: border-box;
+        border: 1px dashed rgba(44, 62, 80, 0.35);
+        background: rgba(44, 62, 80, 0.08);
+      }
+      .item-bar-fill {
+        position: absolute;
+        left: 0;
+        top: 5px;
+        height: 14px;
+        border-radius: 4px;
+        z-index: 2;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .item-bar-fill--acc {
+        background: var(--green);
+        opacity: 0.92;
+      }
+      .item-bar-fill--rt {
+        background: var(--accent);
+        opacity: 0.9;
       }
     </style>
   </head>
@@ -387,14 +583,27 @@
         </div>
         <h3>依組別瀏覽題目</h3>
         <p class="subtext">
-          下列為矩陣卡片：來自已完成實驗之檔案、依題目鍵值去重後排序。漢字與臺羅不另加欄位名；右上角為真／假詞標籤；底列詞頻標籤依「懸／低」套用不同底色（無資料則不顯示）。
+          下列為矩陣卡片：來自已完成實驗之檔案、依題目鍵值去重後排序。請以選單或左右箭頭切換組別；真／假詞與華、台詞頻為該組共通設定，顯示於選單與箭頭之後；字卡僅列漢字與臺羅（無欄位名）。
         </p>
-        <div class="toolbar">
-          <label>
-            選擇組別
-            <select id="browse-ab-select"></select>
-          </label>
+        <div id="browse-nav-row" class="browse-nav-row" style="display: none">
+          <button type="button" id="browse-ab-prev" class="browse-nav-btn" aria-label="上一組" title="上一組">
+            ‹
+          </button>
+          <div class="browse-nav-center">
+            <label>
+              選擇組別
+              <select id="browse-ab-select"></select>
+            </label>
+          </div>
+          <button type="button" id="browse-ab-next" class="browse-nav-btn" aria-label="下一組" title="下一組">
+            ›
+          </button>
         </div>
+        <div
+          id="browse-group-summary-host"
+          class="browse-group-summary-host"
+          style="display: none"
+        ></div>
         <div id="browse-ab-cards-host"></div>
       </section>
 
@@ -437,53 +646,25 @@
       <section id="sec-items">
         <h2><span class="sec-num">5</span>題目層級：反應時間與正確率</h2>
         <p class="subtext">
-          以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。表格中「平均
-          RT（全部）」含錯誤試次；「平均 RT（僅正確）」僅 corr=1；RT 標準差為試次層級之樣本標準差。
+          以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。僅能以實驗組別
+          A–F 篩選；卡片上橫條為正確率（0–100%）與平均 RT（列內以相同比例尺對齊）；半透明區間為平均 ±1
+          SD（正確率 SD 為各試次 0/1 之樣本標準差；RT 僅正確時為正確試次之 RT 標準差，否則為全部試次之
+          RT 標準差）。排序：RT 為反應時間由快到慢；正確率為由高到低。
         </p>
-        <div class="toolbar">
+        <div class="item-cards-toolbar">
           <label>
             組別（A–F）
             <select id="filter-ab組"></select>
           </label>
           <label>
-            CSV 分組
-            <select id="filter-分組"></select>
-          </label>
-          <label>
-            isword（1 真／0 假）
-            <select id="filter-isword"></select>
-          </label>
-          <label>
-            台語詞頻分組
-            <select id="filter-tw"></select>
-          </label>
-          <label>
-            華語詞頻分組
-            <select id="filter-hua"></select>
+            排序
+            <select id="filter-item-sort">
+              <option value="rt">依照 RT 排序</option>
+              <option value="acc">依照正確率排序</option>
+            </select>
           </label>
         </div>
-        <div class="data-table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>漢字</th>
-                <th>ifile</th>
-                <th>組別（A–F）</th>
-                <th>CSV 分組</th>
-                <th>isword</th>
-                <th>台語詞頻</th>
-                <th>華語詞頻</th>
-                <th>n 試次</th>
-                <th>正確率</th>
-                <th>平均 RT 全部（ms）</th>
-                <th>SD 全部（ms）</th>
-                <th>平均 RT 僅正確（ms）</th>
-                <th>SD 僅正確（ms）</th>
-              </tr>
-            </thead>
-            <tbody id="item-table-body"></tbody>
-          </table>
-        </div>
+        <div id="item-cards-host"></div>
       </section>
 
       <section id="sec-quality">
