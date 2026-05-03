@@ -1,4 +1,4 @@
-/* global Papa, Plotly */
+/* global Papa, Plotly, jStat */
 "use strict";
 
 (function (global) {
@@ -615,6 +615,621 @@
     );
   }
 
+  /** 雙尾 p 值：Student t(df)；若無 jStat 則大樣本時退回常態近似 */
+  function tDistTwoTailP(t, df) {
+    if (!Number.isFinite(t) || !(df > 0)) return NaN;
+    const a = Math.abs(t);
+    if (typeof jStat !== "undefined" && jStat.studentt && jStat.studentt.cdf) {
+      const cdf = jStat.studentt.cdf(a, df);
+      return Math.min(1, Math.max(0, 2 * (1 - cdf)));
+    }
+    if (df >= 80) {
+      const z = a;
+      const p = 2 * (1 - normalCdf(z));
+      return Math.min(1, Math.max(0, p));
+    }
+    return NaN;
+  }
+
+  function normalCdf(x) {
+    return 0.5 * (1 + erfApprox(x / Math.SQRT2));
+  }
+
+  function erfApprox(x) {
+    const sign = x < 0 ? -1 : 1;
+    const ax = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * ax);
+    const p =
+      (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) *
+        t +
+        0.254829592) *
+        t) *
+      Math.exp(-ax * ax);
+    return sign * (1 - p);
+  }
+
+  function oneSampleTFromDiffs(diffs) {
+    const arr = diffs.filter((x) => Number.isFinite(x));
+    const n = arr.length;
+    if (n < 2) {
+      return {
+        n,
+        mean: n === 1 ? arr[0] : NaN,
+        sd: NaN,
+        se: NaN,
+        t: NaN,
+        df: NaN,
+        p: NaN,
+        dz: NaN,
+        f: NaN,
+        etaPartial: NaN,
+      };
+    }
+    const m = mean(arr);
+    const s = sdSample(arr);
+    const se = s / Math.sqrt(n);
+    const df = n - 1;
+    const t = se > 0 ? m / se : NaN;
+    const p = Number.isFinite(t) ? tDistTwoTailP(t, df) : NaN;
+    const dz = s > 0 ? m / s : NaN;
+    const f = Number.isFinite(t) ? t * t : NaN;
+    const etaPartial =
+      Number.isFinite(f) && df > 0 ? f / (f + df) : NaN;
+    return { n, mean: m, sd: s, se, t, df, p, dz, f, etaPartial };
+  }
+
+  /**
+   * 每位受試者在 A–D 各格：僅正確 RT 之平均、該格正確率、試次數。
+   */
+  function buildParticipantAbcdCells(completedFiles) {
+    const letters = ["A", "B", "C", "D"];
+    const out = [];
+    for (let fi = 0; fi < completedFiles.length; fi++) {
+      const f = completedFiles[fi];
+      const cells = {};
+      for (let li = 0; li < letters.length; li++) {
+        cells[letters[li]] = { rtsCorr: [], corrs: [] };
+      }
+      for (let ti = 0; ti < f.trials.length; ti++) {
+        const t = f.trials[ti];
+        const g = t.ab組;
+        if (!cells[g]) continue;
+        if (t.corr === 1) cells[g].rtsCorr.push(t.rtMs);
+        cells[g].corrs.push(t.corr);
+      }
+      const row = {
+        participant: f.participant || f.fileName,
+        fileName: f.fileName,
+      };
+      for (let li = 0; li < letters.length; li++) {
+        const L = letters[li];
+        const c = cells[L];
+        row[L + "_rt"] = c.rtsCorr.length ? mean(c.rtsCorr) : NaN;
+        row[L + "_acc"] = c.corrs.length ? mean(c.corrs) : NaN;
+        row[L + "_n"] = c.corrs.length;
+        row[L + "_nCorrRt"] = c.rtsCorr.length;
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function filterCompleteAbcd(rows, mode) {
+    const letters = ["A", "B", "C", "D"];
+    return rows.filter((r) => {
+      for (let i = 0; i < letters.length; i++) {
+        const L = letters[i];
+        if (mode === "rt") {
+          if (!Number.isFinite(r[L + "_rt"]) || r[L + "_nCorrRt"] < 1)
+            return false;
+        } else {
+          if (!Number.isFinite(r[L + "_acc"]) || r[L + "_n"] < 1)
+            return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  /**
+   * 受試者內 2×2 重複量數：華語主效應、台語主效應、交互作用之對比分。
+   * 華語：( (A+B) − (C+D) ) / 2 = 華懸邊際 − 華低邊際（RT 或正確率之細格平均差）
+   * 台語：( (A+C) − (B+D) ) / 2
+   * 交互：A − B − C + D（可解讀為「華語效應在台語懸與台語低兩層之差」）
+   */
+  function rm2x2Contrasts(rows, mode) {
+    const letters = ["A", "B", "C", "D"];
+    const ok = filterCompleteAbcd(rows, mode);
+    const suffix = mode === "rt" ? "_rt" : "_acc";
+    function pull(r, L) {
+      return r[L + suffix];
+    }
+    const chH = [];
+    const chT = [];
+    const chI = [];
+    for (let i = 0; i < ok.length; i++) {
+      const r = ok[i];
+      const A = pull(r, "A");
+      const B = pull(r, "B");
+      const C = pull(r, "C");
+      const D = pull(r, "D");
+      chH.push((A + B - C - D) / 2);
+      chT.push((A + C - B - D) / 2);
+      chI.push(A - B - C + D);
+    }
+    return {
+      rowsUsed: ok.length,
+      rowsTotal: rows.length,
+      hua: oneSampleTFromDiffs(chH),
+      tai: oneSampleTFromDiffs(chT),
+      interaction: oneSampleTFromDiffs(chI),
+    };
+  }
+
+  function cellMeansAndSem(rows, mode) {
+    const letters = ["A", "B", "C", "D"];
+    const suffix = mode === "rt" ? "_rt" : "_acc";
+    const ok = filterCompleteAbcd(rows, mode);
+    const stats = {};
+    for (let li = 0; li < letters.length; li++) {
+      const L = letters[li];
+      const vals = ok.map((r) => r[L + suffix]).filter(Number.isFinite);
+      const m = mean(vals);
+      const s = vals.length >= 2 ? sdSample(vals) : NaN;
+      const sem =
+        vals.length >= 2 && Number.isFinite(s)
+          ? s / Math.sqrt(vals.length)
+          : 0;
+      stats[L] = { m, sem, n: vals.length };
+    }
+    return stats;
+  }
+
+  function fmtP(p) {
+    if (!Number.isFinite(p)) return "—";
+    if (p < 0.0001) return "< .0001";
+    if (p < 0.001) return "< .001";
+    return p.toFixed(4);
+  }
+
+  function renderFreqRmAnovaTable(tableEl, rtRes, accRes) {
+    if (!tableEl) return;
+    const rows = [
+      {
+        label: "華語詞頻（懸 vs 低）",
+        contrast: "(A+B−C−D)/2：邊際「華懸」−「華低」",
+        rt: rtRes.hua,
+        acc: accRes.hua,
+      },
+      {
+        label: "台語詞頻（懸 vs 低）",
+        contrast: "(A+C−B−D)/2：邊際「台懸」−「台低」",
+        rt: rtRes.tai,
+        acc: accRes.tai,
+      },
+      {
+        label: "華語×台語交互作用",
+        contrast: "A−B−C+D",
+        rt: rtRes.interaction,
+        acc: accRes.interaction,
+      },
+    ];
+    let html =
+      "<thead><tr><th>來源</th><th>對比</th><th colspan=\"5\">RT（ms，僅正確細格平均）</th><th colspan=\"5\">正確率（細格平均）</th></tr>";
+    html +=
+      "<tr><th></th><th></th><th>n</th><th>M<sub>diff</sub></th><th>t</th><th>p</th><th>d<sub>z</sub></th><th>n</th><th>M<sub>diff</sub></th><th>t</th><th>p</th><th>d<sub>z</sub></th></tr></thead><tbody>";
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rt = r.rt;
+      const ac = r.acc;
+      html += "<tr><td>" + r.label + "</td><td>" + r.contrast + "</td>";
+      html +=
+        "<td>" +
+        (rt.n != null ? String(rt.n) : "—") +
+        "</td><td>" +
+        fmtNum(rt.mean, 2) +
+        "</td><td>" +
+        fmtNum(rt.t, 3) +
+        "</td><td>" +
+        fmtP(rt.p) +
+        "</td><td>" +
+        fmtNum(rt.dz, 3) +
+        "</td>";
+      html +=
+        "<td>" +
+        (ac.n != null ? String(ac.n) : "—") +
+        "</td><td>" +
+        fmtNum(ac.mean, 4) +
+        "</td><td>" +
+        fmtNum(ac.t, 3) +
+        "</td><td>" +
+        fmtP(ac.p) +
+        "</td><td>" +
+        fmtNum(ac.dz, 3) +
+        "</td></tr>";
+    }
+    html += "</tbody>";
+    tableEl.innerHTML = html;
+  }
+
+  function plotFreqInteractionLines(
+    elId,
+    cellStats,
+    title,
+    yTitle,
+    valueForAccAsPercent,
+  ) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const finite =
+      cellStats &&
+      ["A", "B", "C", "D"].every(
+        (L) => cellStats[L] && Number.isFinite(cellStats[L].m),
+      );
+    if (!finite) {
+      Plotly.react(
+        el,
+        [],
+        {
+          ...plotlyLayoutBase,
+          title: { text: title + "（無足夠資料）" },
+          annotations: [
+            {
+              text: "無可繪製之跨人平均（受試者人數或完整細格不足）",
+              xref: "paper",
+              yref: "paper",
+              x: 0.5,
+              y: 0.5,
+              showarrow: false,
+              font: { size: 13, color: "#5d6d7e" },
+            },
+          ],
+        },
+        { responsive: true },
+      );
+      return;
+    }
+    const xLabs = ["華語懸", "華語低"];
+    const traceTwXuan = {
+      type: "scatter",
+      mode: "lines+markers",
+      name: "台語懸",
+      x: xLabs,
+      xaxis: "x",
+      y: [cellStats.A.m, cellStats.C.m],
+      error_y: {
+        type: "data",
+        array: [cellStats.A.sem, cellStats.C.sem],
+        visible: true,
+        thickness: 1.2,
+        width: 5,
+      },
+      line: { color: "#2980b9", width: 2.5 },
+      marker: { size: 9 },
+      hovertemplate:
+        "%{fullData.name}<br>華語：%{x}<br>" +
+        (valueForAccAsPercent ? "平均：%{y:.1f}%<br>" : "平均：%{y:.0f} ms<br>") +
+        "SEM：%{error_y.array}<extra></extra>",
+    };
+    const traceTwTi = {
+      type: "scatter",
+      mode: "lines+markers",
+      name: "台語低",
+      x: xLabs,
+      y: [cellStats.B.m, cellStats.D.m],
+      error_y: {
+        type: "data",
+        array: [cellStats.B.sem, cellStats.D.sem],
+        visible: true,
+        thickness: 1.2,
+        width: 5,
+      },
+      line: { color: "#d68910", dash: "dash", width: 2.5 },
+      marker: { size: 9 },
+      hovertemplate:
+        "%{fullData.name}<br>華語：%{x}<br>" +
+        (valueForAccAsPercent ? "平均：%{y:.1f}%<br>" : "平均：%{y:.0f} ms<br>") +
+        "SEM：%{error_y.array}<extra></extra>",
+    };
+    let y0 = cellStats.A.m;
+    let y1 = cellStats.B.m;
+    let y2 = cellStats.C.m;
+    let y3 = cellStats.D.m;
+    if (valueForAccAsPercent) {
+      y0 *= 100;
+      y1 *= 100;
+      y2 *= 100;
+      y3 *= 100;
+      traceTwXuan.y = [y0, y2];
+      traceTwTi.y = [y1, y3];
+      traceTwXuan.error_y.array = [
+        cellStats.A.sem * 100,
+        cellStats.C.sem * 100,
+      ];
+      traceTwTi.error_y.array = [
+        cellStats.B.sem * 100,
+        cellStats.D.sem * 100,
+      ];
+    }
+    const yMin = Math.min(y0, y1, y2, y3);
+    const yMax = Math.max(y0, y1, y2, y3);
+    const pad = valueForAccAsPercent
+      ? Math.max(3, (yMax - yMin) * 0.12)
+      : Math.max(40, (yMax - yMin) * 0.12);
+    Plotly.react(
+      el,
+      [traceTwXuan, traceTwTi],
+      {
+        ...plotlyLayoutBase,
+        title: { text: title },
+        xaxis: { title: "華語詞頻分組" },
+        yaxis: {
+          title: yTitle,
+          range: valueForAccAsPercent
+            ? [Math.max(0, yMin - pad), Math.min(100, yMax + pad)]
+            : [Math.max(200, yMin - pad), yMax + pad],
+        },
+        legend: { orientation: "h", y: 1.08 },
+        margin: { ...plotlyLayoutBase.margin, t: 52 },
+        hoverlabel: { align: "left", font: { size: 12 } },
+      },
+      { responsive: true },
+    );
+  }
+
+  function parseHexColor(hex) {
+    const h = String(hex).replace(/^#/, "");
+    if (h.length !== 6) return [0, 0, 0];
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+    ];
+  }
+
+  /** sRGB 0–255 → WCAG 相對亮度（0–1） */
+  function relativeLuminanceFromRgb8(rgb) {
+    function lin(c) {
+      const x = c / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    }
+    const R = lin(rgb[0]);
+    const G = lin(rgb[1]);
+    const B = lin(rgb[2]);
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  }
+
+  /** Plotly 分段 colorscale：t∈[0,1] 線性內插 RGB */
+  function rgbAtColorscaleT(colorscale, t) {
+    const stops = colorscale.map(function (row) {
+      return { t0: row[0], rgb: parseHexColor(row[1]) };
+    });
+    stops.sort(function (a, b) {
+      return a.t0 - b.t0;
+    });
+    const x = Math.max(0, Math.min(1, t));
+    if (x <= stops[0].t0) return stops[0].rgb.slice();
+    const last = stops[stops.length - 1];
+    if (x >= last.t0) return last.rgb.slice();
+    for (let i = 1; i < stops.length; i++) {
+      if (x <= stops[i].t0) {
+        const a = stops[i - 1];
+        const b = stops[i];
+        const span = b.t0 - a.t0;
+        const u = span <= 1e-9 ? 0 : (x - a.t0) / span;
+        return [
+          Math.round(a.rgb[0] + u * (b.rgb[0] - a.rgb[0])),
+          Math.round(a.rgb[1] + u * (b.rgb[1] - a.rgb[1])),
+          Math.round(a.rgb[2] + u * (b.rgb[2] - a.rgb[2])),
+        ];
+      }
+    }
+    return last.rgb.slice();
+  }
+
+  /** 在底色上選白字或深字，使 WCAG 對比較佳 */
+  function pickHeatmapLabelColor(bgRgb8) {
+    const L = relativeLuminanceFromRgb8(bgRgb8);
+    const Lw = 1;
+    const Lb = 0;
+    const crWhite = (Math.max(L, Lw) + 0.05) / (Math.min(L, Lw) + 0.05);
+    const crBlack = (Math.max(L, Lb) + 0.05) / (Math.min(L, Lb) + 0.05);
+    return crWhite >= crBlack ? "#ffffff" : "#2c3e50";
+  }
+
+  function heatmapCellLabelAnnotations(
+    z00,
+    z01,
+    z10,
+    z11,
+    labels,
+    colorScale,
+  ) {
+    const zMin = Math.min(z00, z01, z10, z11);
+    const zMax = Math.max(z00, z01, z10, z11);
+    const span = zMax - zMin;
+    function colorForZ(z) {
+      const t = span <= 1e-9 ? 0.5 : (z - zMin) / span;
+      return rgbAtColorscaleT(colorScale, t);
+    }
+    const specs = [
+      { x: "台語懸", y: "華語懸", z: z00, text: labels[0][0] },
+      { x: "台語低", y: "華語懸", z: z01, text: labels[0][1] },
+      { x: "台語懸", y: "華語低", z: z10, text: labels[1][0] },
+      { x: "台語低", y: "華語低", z: z11, text: labels[1][1] },
+    ];
+    return specs.map(function (s) {
+      return {
+        xref: "x",
+        yref: "y",
+        x: s.x,
+        y: s.y,
+        text: s.text,
+        showarrow: false,
+        xanchor: "center",
+        yanchor: "middle",
+        font: { size: 13, color: pickHeatmapLabelColor(colorForZ(s.z)) },
+      };
+    });
+  }
+
+  function plotFreqHeatmap2x2(
+    elId,
+    cellStats,
+    title,
+    colorScale,
+    valueForAccAsPercent,
+  ) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const finite =
+      cellStats &&
+      ["A", "B", "C", "D"].every(
+        (L) => cellStats[L] && Number.isFinite(cellStats[L].m),
+      );
+    if (!finite) {
+      Plotly.react(
+        el,
+        [],
+        {
+          ...plotlyLayoutBase,
+          title: { text: title + "（無足夠資料）" },
+          annotations: [
+            {
+              text: "無可繪製之跨人平均",
+              xref: "paper",
+              yref: "paper",
+              x: 0.5,
+              y: 0.5,
+              showarrow: false,
+              font: { size: 13, color: "#5d6d7e" },
+            },
+          ],
+        },
+        { responsive: true },
+      );
+      return;
+    }
+    let z00 = cellStats.A.m;
+    let z01 = cellStats.B.m;
+    let z10 = cellStats.C.m;
+    let z11 = cellStats.D.m;
+    let text = [
+      [fmtNum(z00, 0), fmtNum(z01, 0)],
+      [fmtNum(z10, 0), fmtNum(z11, 0)],
+    ];
+    if (valueForAccAsPercent) {
+      z00 *= 100;
+      z01 *= 100;
+      z10 *= 100;
+      z11 *= 100;
+      text = [
+        [fmtNum(z00, 1) + "%", fmtNum(z01, 1) + "%"],
+        [fmtNum(z10, 1) + "%", fmtNum(z11, 1) + "%"],
+      ];
+    }
+    const annos = heatmapCellLabelAnnotations(
+      z00,
+      z01,
+      z10,
+      z11,
+      text,
+      colorScale,
+    );
+    Plotly.react(
+      el,
+      [
+        {
+          type: "heatmap",
+          z: [
+            [z00, z01],
+            [z10, z11],
+          ],
+          x: ["台語懸", "台語低"],
+          y: ["華語懸", "華語低"],
+          colorscale: colorScale,
+          hovertemplate:
+            "華語 %{y}<br>台語 %{x}<br>" +
+            (valueForAccAsPercent ? "%{z:.1f}%<extra></extra>" : "%{z:.0f} ms<extra></extra>"),
+          colorbar: {
+            title:
+              valueForAccAsPercent
+                ? { text: "正確率（%）", side: "right" }
+                : { text: "RT（ms）", side: "right" },
+          },
+        },
+      ],
+      {
+        ...plotlyLayoutBase,
+        title: { text: title },
+        xaxis: { title: "台語詞頻分組" },
+        yaxis: { title: "華語詞頻分組", autorange: "reversed" },
+        margin: { ...plotlyLayoutBase.margin, l: 72 },
+        annotations: annos,
+      },
+      { responsive: true },
+    );
+  }
+
+  function renderFreqRmSection(completedFiles) {
+    const metaEl = document.getElementById("freq-rm-meta");
+    const tableEl = document.getElementById("freq-rm-anova-table");
+    const rows = buildParticipantAbcdCells(completedFiles);
+    const rtRes = rm2x2Contrasts(rows, "rt");
+    const accRes = rm2x2Contrasts(rows, "acc");
+    const rtCells = cellMeansAndSem(rows, "rt");
+    const accCells = cellMeansAndSem(rows, "acc");
+
+    if (metaEl) {
+      metaEl.textContent =
+        "台華共同詞 A–D：完成實驗受試者共 " +
+        rows.length +
+        " 人；RT 分析完整資料 n = " +
+        rtRes.rowsUsed +
+        "（四格皆有可計算之正確 RT）；正確率分析完整資料 n = " +
+        accRes.rowsUsed +
+        "。各列 t 檢定對應雙因子受試者內變異數分析中同來源之 F(1, n−1) = t²。";
+    }
+    renderFreqRmAnovaTable(tableEl, rtRes, accRes);
+
+    plotFreqInteractionLines(
+      "chart-freq-rt-interaction",
+      rtCells,
+      "交互作用圖：平均 RT（受試者內細格平均 → 跨人平均 ± SEM）",
+      "RT（ms）",
+      false,
+    );
+    plotFreqInteractionLines(
+      "chart-freq-acc-interaction",
+      accCells,
+      "交互作用圖：平均正確率（同上）",
+      "正確率（%）",
+      true,
+    );
+    plotFreqHeatmap2x2(
+      "chart-freq-rt-heatmap",
+      rtCells,
+      "2×2 細格：跨人平均 RT（ms）",
+      [
+        [0, "#ebf5fb"],
+        [0.5, "#5dade2"],
+        [1, "#1a5276"],
+      ],
+      false,
+    );
+    plotFreqHeatmap2x2(
+      "chart-freq-acc-heatmap",
+      accCells,
+      "2×2 細格：跨人平均正確率（%）",
+      [
+        [0, "#eafaf1"],
+        [0.5, "#52be80"],
+        [1, "#145a32"],
+      ],
+      true,
+    );
+  }
+
   function abGroupsInItemMap(itemMap) {
     const present = new Set();
     itemMap.forEach((rec) => present.add(rec.ab組 || AB_GROUP_OTHER));
@@ -804,15 +1419,18 @@
     return x.toFixed(digits);
   }
 
-  /** 正確率（0/1 試次）之樣本標準差，供橫條上標示離散度 */
-  function accuracySdFromCorrs(corrs) {
-    if (!corrs || corrs.length < 2) return NaN;
-    return sdSample(corrs);
-  }
-
   function pctClamp01(x) {
     if (!Number.isFinite(x)) return 0;
     return Math.max(0, Math.min(100, x));
+  }
+
+  function countCorrOnes(corrs) {
+    let c = 0;
+    if (!corrs || !corrs.length) return 0;
+    for (let j = 0; j < corrs.length; j++) {
+      if (corrs[j] === 1) c++;
+    }
+    return c;
   }
 
   function collectItemRowsByAb(itemMap, abFilter) {
@@ -894,10 +1512,12 @@
     val.className = "item-metric-val";
     val.textContent = valueLine;
     hd.appendChild(val);
-    const sdEl = document.createElement("span");
-    sdEl.className = "item-metric-sd";
-    sdEl.textContent = sdLine;
-    hd.appendChild(sdEl);
+    if (sdLine != null && sdLine !== "") {
+      const sdEl = document.createElement("span");
+      sdEl.className = "item-metric-sd";
+      sdEl.textContent = sdLine;
+      hd.appendChild(sdEl);
+    }
     block.appendChild(hd);
 
     const row = document.createElement("div");
@@ -983,29 +1603,26 @@
       nEl.className = "item-stat-n";
       nEl.textContent = "n = " + String(st.n);
       card.appendChild(nEl);
+      const nOk = countCorrOnes(rec.corrs);
+      const nBad = Math.max(0, rec.corrs.length - nOk);
+      const nDetail = document.createElement("div");
+      nDetail.className = "item-stat-n-detail";
+      nDetail.textContent = "正確 " + String(nOk) + " · 錯誤 " + String(nBad);
+      card.appendChild(nDetail);
 
       const accMean = st.acc;
-      const sdAcc = accuracySdFromCorrs(rec.corrs);
       const accMeanPct = Number.isFinite(accMean) ? accMean * 100 : 0;
-      const sdAccPct = Number.isFinite(sdAcc) ? sdAcc * 100 : 0;
-      const accSdLeftRaw = accMeanPct - sdAccPct;
-      const accSdRightRaw = accMeanPct + sdAccPct;
-      const accSdLeft = pctClamp01(accSdLeftRaw);
-      const accSdRight = pctClamp01(accSdRightRaw);
-      const accSdW = Math.max(0, accSdRight - accSdLeft);
       const accVal =
         (Number.isFinite(accMean) ? fmtNum(accMean * 100, 1) : "—") + "%";
-      const accSdTxt =
-        Number.isFinite(sdAcc) ? "SD " + fmtNum(sdAcc * 100, 1) + "%" : "SD —";
       appendBarRowMetric(
         card,
         "正確率",
-        accSdLeft,
-        accSdW,
+        NaN,
+        NaN,
         accMeanPct,
         "item-bar-fill--acc",
         accVal,
-        accSdTxt,
+        "",
       );
 
       const mRt = Number.isFinite(st.mCor) ? st.mCor : st.mAll;
@@ -1198,6 +1815,8 @@
     const grp = aggregateByAbGroup(completed);
     plotGroupRt("chart-by-group-rt", grp.labels, grp.meanRtCorr);
     plotGroupAcc("chart-by-group-acc", grp.labels, grp.meanAcc);
+
+    renderFreqRmSection(completed);
 
     const itemMap = buildItemMap(completed);
     const allAb = abGroupsInItemMap(itemMap);

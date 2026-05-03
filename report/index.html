@@ -6,6 +6,7 @@
     <title>台語雙音節 LDT 實驗 — 結果報告（初版）</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
     <script src="ldt-report.js" defer></script>
     <style>
       :root {
@@ -471,6 +472,12 @@
         color: var(--subtext);
         margin-top: 2px;
       }
+      .item-stat-n-detail {
+        font-size: 12px;
+        color: var(--subtext);
+        margin-top: 2px;
+        line-height: 1.45;
+      }
       .item-metric {
         margin-top: 10px;
       }
@@ -543,6 +550,7 @@
       <a href="#sec-summary">摘要</a>
       <a href="#sec-demo">受試者分布</a>
       <a href="#sec-group">依 A–F 組</a>
+      <a href="#sec-freq-rm">華×台詞頻</a>
       <a href="#sec-items">題目統計</a>
       <a href="#sec-quality">資料品質</a>
       <div class="nav-actions">
@@ -643,13 +651,44 @@
         </div>
       </section>
 
+      <section id="sec-freq-rm">
+        <h2><span class="sec-num">5</span>華語×台語詞頻（A–D）：對 RT 與正確率之影響與交互作用</h2>
+        <p class="subtext">
+          僅分析台華共同詞之四格設計（A：華懸台懸；B：華懸台低；C：華低台懸；D：華低台低）。每位受試者各格計算
+          「僅正確試次之平均 RT」與「該格正確率」。統計上視為<strong>受試者內 2（華語詞頻：懸／低）×
+          2（台語詞頻：懸／低）</strong>；在球形假設成立且各對比自由度為 1 時，以<strong>對比差分之一樣本
+          t 檢定</strong>（df = n−1）檢驗華語主效應、台語主效應與交互作用，結果與標準雙因子<strong>重複量數
+          ANOVA</strong>之 F 檢定（各為 F(1, n−1)）等價。RT
+          分析僅納入四格皆有至少一筆正確反應、可計算細格平均 RT 之受試者；正確率則納入四格皆有試次之受試者。
+        </p>
+        <div class="note">
+          正確率為比例資料，嚴謹作法可採廣義線性混合模型（試次層級）；此處採受試者內細格平均後之 t
+          檢定，與課堂常見之變異數分析敘述一致，解讀時請留意邊界效應。下表 d<sub>z</sub> 為 Cohen’s
+          <em>d</em><sub>z</sub>（各對比差分之平均／差分之 SD）。
+        </div>
+        <div id="freq-rm-meta" class="subtext" style="margin-bottom: 8px"></div>
+        <div class="data-table-wrap">
+          <table class="data-table" id="freq-rm-anova-table" aria-label="詞頻因子與交互作用檢定"></table>
+        </div>
+        <h3>圖：邊際平均（受試者內細格平均再跨人平均）±1 SEM</h3>
+        <div class="chart-row">
+          <div class="chart-wrap" id="chart-freq-rt-interaction"></div>
+          <div class="chart-wrap" id="chart-freq-acc-interaction"></div>
+        </div>
+        <h3>圖：2×2 細格平均（RT 與正確率）</h3>
+        <div class="chart-row">
+          <div class="chart-wrap" id="chart-freq-rt-heatmap"></div>
+          <div class="chart-wrap" id="chart-freq-acc-heatmap"></div>
+        </div>
+      </section>
+
       <section id="sec-items">
-        <h2><span class="sec-num">5</span>題目層級：反應時間與正確率</h2>
+        <h2><span class="sec-num">6</span>題目層級：反應時間與正確率</h2>
         <p class="subtext">
           以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。僅能以實驗組別
-          A–F 篩選；卡片上橫條為正確率（0–100%）與平均 RT（列內以相同比例尺對齊）；半透明區間為平均 ±1
-          SD（正確率 SD 為各試次 0/1 之樣本標準差；RT 僅正確時為正確試次之 RT 標準差，否則為全部試次之
-          RT 標準差）。排序：RT 為反應時間由快到慢；正確率為由高到低。
+          A–F 篩選；正確率橫條為整體正確比例（0–100%），不另標 SD。RT
+          橫條為列內共用比例尺；半透明區間為平均 ±1 SD（僅正確試次有足夠資料時為僅正確
+          RT 之 SD，否則為全部試次 RT 之 SD）。排序：RT 由快到慢；正確率由高到低。
         </p>
         <div class="item-cards-toolbar">
           <label>
@@ -668,7 +707,7 @@
       </section>
 
       <section id="sec-quality">
-        <h2><span class="sec-num">6</span>資料品質與排除說明</h2>
+        <h2><span class="sec-num">7</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
           <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。
