@@ -234,14 +234,119 @@
       .quality-block ul.warn-list li {
         color: var(--red);
       }
+      .group-def-list {
+        margin: 12px 0 8px 20px;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.75;
+      }
+      .group-def-list li {
+        margin-bottom: 6px;
+      }
+      .group-def-list strong {
+        color: var(--primary);
+      }
+      #browse-ab-cards-host {
+        margin-top: 10px;
+      }
+      .browse-stim-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+      }
+      .stim-card {
+        position: relative;
+        background: linear-gradient(160deg, #fff 0%, var(--light) 100%);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 14px 14px;
+        box-sizing: border-box;
+        box-shadow: 0 1px 3px rgba(44, 62, 80, 0.08);
+        min-height: 88px;
+      }
+      .stim-card-inner {
+        padding-right: 68px;
+      }
+      .stim-card--no-badge .stim-card-inner {
+        padding-right: 0;
+      }
+      .stim-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 1;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+      }
+      .stim-badge--real {
+        background: rgba(30, 132, 73, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(30, 132, 73, 0.28);
+      }
+      .stim-badge--pseudo {
+        background: rgba(192, 57, 43, 0.1);
+        color: var(--red);
+        border: 1px solid rgba(192, 57, 43, 0.25);
+      }
+      .stim-card .stim-han {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1.35;
+        margin: 0 0 4px;
+        word-break: break-word;
+      }
+      .stim-card .stim-tl {
+        font-size: 1.28rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.35;
+        word-break: break-word;
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
+      }
+      .stim-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+        align-items: center;
+      }
+      .stim-tag {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 999px;
+        letter-spacing: 0.02em;
+      }
+      .stim-tag--freq-xuan {
+        background: #ebf5fb;
+        color: var(--accent);
+        border: 1px solid rgba(41, 128, 185, 0.35);
+      }
+      .stim-tag--freq-di {
+        background: #eef1f5;
+        color: var(--subtext);
+        border: 1px solid var(--border);
+      }
+      .stim-tag--freq-other {
+        background: var(--light);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
     </style>
   </head>
   <body>
     <nav>
       <span class="brand">台語雙音節 LDT</span>
+      <a href="#sec-design">題組與題目</a>
       <a href="#sec-summary">摘要</a>
       <a href="#sec-demo">受試者分布</a>
-      <a href="#sec-group">依分組</a>
+      <a href="#sec-group">依 A–F 組</a>
       <a href="#sec-items">題目統計</a>
       <a href="#sec-quality">資料品質</a>
       <div class="nav-actions">
@@ -260,14 +365,47 @@
         </p>
       </header>
 
+      <section id="sec-design">
+        <h2><span class="sec-num">1</span>實驗題組（A–F）說明與題目瀏覽</h2>
+        <p class="subtext">
+          正式實驗中，真正納入分析架構的題目依詞彙性質與詞頻設計分為六類。A–D
+          為「台華共同詞」在華語、台語詞頻（懸／低）上的四種組合；E、F
+          為對照類之純台語詞與假詞。
+        </p>
+        <ul class="group-def-list">
+          <li><strong>A 組</strong>：台華共同詞；華語詞頻懸、台語詞頻懸。</li>
+          <li><strong>B 組</strong>：台華共同詞；華語詞頻懸、台語詞頻低。</li>
+          <li><strong>C 組</strong>：台華共同詞；華語詞頻低、台語詞頻懸。</li>
+          <li><strong>D 組</strong>：台華共同詞；華語詞頻低、台語詞頻低。</li>
+          <li><strong>E 組</strong>：純台語詞；皆為教育部 700 推薦字詞範圍內之詞彙。</li>
+          <li><strong>F 組</strong>：假詞。</li>
+        </ul>
+        <div class="note">
+          本頁圖表與「組別（A–F）」欄位係依 CSV 自動對應：<code>實驗材料</code> 列為台華共同詞，並以
+          <code>華語詞頻分組</code>、<code>台語詞頻分組</code>（值為懸／低）對應 A–D；<code>filler_純台語詞</code> 為
+          E；<code>filler_假詞</code> 為 F。若欄位組合無法辨識，會歸入「（其他）」。
+        </div>
+        <h3>依組別瀏覽題目</h3>
+        <p class="subtext">
+          下列為矩陣卡片：來自已完成實驗之檔案、依題目鍵值去重後排序。漢字與臺羅不另加欄位名；右上角為真／假詞標籤；底列詞頻標籤依「懸／低」套用不同底色（無資料則不顯示）。
+        </p>
+        <div class="toolbar">
+          <label>
+            選擇組別
+            <select id="browse-ab-select"></select>
+          </label>
+        </div>
+        <div id="browse-ab-cards-host"></div>
+      </section>
+
       <section id="sec-summary">
-        <h2><span class="sec-num">1</span>載入摘要</h2>
+        <h2><span class="sec-num">2</span>載入摘要</h2>
         <div id="stat-cards"></div>
         <p id="load-status">準備載入…</p>
       </section>
 
       <section id="sec-demo">
-        <h2><span class="sec-num">2</span>受試者：年齡、性別、台語檢定</h2>
+        <h2><span class="sec-num">3</span>受試者：年齡、性別、台語檢定</h2>
         <p class="subtext">以下僅統計「完成實驗且 80 試次」之受試者。性別已將 M／F 等映射為男／女；其餘歸類為其他。</p>
         <div class="chart-wrap" id="chart-age"></div>
         <div class="chart-row">
@@ -277,8 +415,19 @@
       </section>
 
       <section id="sec-group">
-        <h2><span class="sec-num">3</span>依題目「分組」聚合</h2>
-        <p class="subtext">平均 RT 僅計算正確試次（常見 LDT 報告方式）；正確率含所有試次。</p>
+        <h2><span class="sec-num">4</span>依實驗組別（A–F）聚合</h2>
+        <ul class="group-def-list">
+          <li><strong>A 組</strong>：台華共同詞；華語詞頻懸、台語詞頻懸。</li>
+          <li><strong>B 組</strong>：台華共同詞；華語詞頻懸、台語詞頻低。</li>
+          <li><strong>C 組</strong>：台華共同詞；華語詞頻低、台語詞頻懸。</li>
+          <li><strong>D 組</strong>：台華共同詞；華語詞頻低、台語詞頻低。</li>
+          <li><strong>E 組</strong>：純台語詞；皆為教育部 700 推薦字詞範圍內之詞彙。</li>
+          <li><strong>F 組</strong>：假詞。</li>
+        </ul>
+        <p class="subtext">
+          以下將每位受試者的試次依上節之 A–F
+          組別加總後計算平均。平均 RT 僅計算正確試次（常見 LDT 報告方式）；正確率含所有試次。將滑鼠移到長條上可再次檢視該組定義與數值。
+        </p>
         <div class="chart-row">
           <div class="chart-wrap" id="chart-by-group-rt"></div>
           <div class="chart-wrap" id="chart-by-group-acc"></div>
@@ -286,14 +435,18 @@
       </section>
 
       <section id="sec-items">
-        <h2><span class="sec-num">4</span>題目層級：反應時間與正確率</h2>
+        <h2><span class="sec-num">5</span>題目層級：反應時間與正確率</h2>
         <p class="subtext">
           以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。表格中「平均
           RT（全部）」含錯誤試次；「平均 RT（僅正確）」僅 corr=1；RT 標準差為試次層級之樣本標準差。
         </p>
         <div class="toolbar">
           <label>
-            分組
+            組別（A–F）
+            <select id="filter-ab組"></select>
+          </label>
+          <label>
+            CSV 分組
             <select id="filter-分組"></select>
           </label>
           <label>
@@ -315,7 +468,8 @@
               <tr>
                 <th>漢字</th>
                 <th>ifile</th>
-                <th>分組</th>
+                <th>組別（A–F）</th>
+                <th>CSV 分組</th>
                 <th>isword</th>
                 <th>台語詞頻</th>
                 <th>華語詞頻</th>
@@ -333,7 +487,7 @@
       </section>
 
       <section id="sec-quality">
-        <h2><span class="sec-num">5</span>資料品質與排除說明</h2>
+        <h2><span class="sec-num">6</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
           <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。

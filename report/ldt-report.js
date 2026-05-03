@@ -7,7 +7,27 @@
   /** 題目最長等待秒數；未按鍵逾時列視為錯誤並以此毫秒計 RT */
   const NO_RESPONSE_RT_MS = 5000;
 
-  const CERT_ORDER = ["未考取", "A1", "A2", "B1", "B2", "C1", "C2"];
+  /** 圖表與聚合用的實驗組別順序（對應下方 trialAbGroup） */
+  const AB_GROUP_ORDER = ["A", "B", "C", "D", "E", "F"];
+  const AB_GROUP_OTHER = "（其他）";
+
+  /** A–F 組別之完整定義（圖表 hover 與說明文字共用語意） */
+  const AB_GROUP_DESC = {
+    A: "台華共同詞；華語詞頻懸、台語詞頻懸。",
+    B: "台華共同詞；華語詞頻懸、台語詞頻低。",
+    C: "台華共同詞；華語詞頻低、台語詞頻懸。",
+    D: "台華共同詞；華語詞頻低、台語詞頻低。",
+    E: "純台語詞；皆為教育部 700 推薦字詞範圍內之詞彙。",
+    F: "假詞。",
+  };
+
+  function abGroupDefinitionText(lab) {
+    if (AB_GROUP_DESC[lab]) return AB_GROUP_DESC[lab];
+    return "無法依 A–F 規則歸類之試次（如缺欄或欄位組合與 CSV 分組異常）。";
+  }
+
+  /** 圖表用等級順序：CEFR A1–C2、未考取；無法對應之原始填答暫歸「（待標準化）」並於品質區塊列出。 */
+  const CERT_ORDER = ["未考取", "A1", "A2", "B1", "B2", "C1", "C2", "（待標準化）"];
 
   const plotlyLayoutBase = {
     font: { family: '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif', size: 12 },
@@ -30,11 +50,31 @@
     return "其他";
   }
 
+  /**
+   * 將「台語檢定成績」欄位標準化為 CEFR A1–C2 或「未考取」。
+   * @returns {{ level: string, unmappedRaw: string | null }} unmappedRaw 僅在歸入「（待標準化）」時為原始字串，供品質說明列出。
+   */
   function normalizeCert(raw) {
-    const t = trimStr(raw).toUpperCase();
-    if (!t || t === "0") return "未考取";
-    if (CERT_ORDER.includes(t)) return t;
-    return t || "未知";
+    const t0 = trimStr(raw);
+    if (!t0 || t0 === "0") return { level: "未考取", unmappedRaw: null };
+
+    const compact = t0.replace(/\s+/g, "");
+    const lat = compact.toUpperCase();
+    if (/^(A1|A2|B1|B2|C1|C2)$/.test(lat)) return { level: lat, unmappedRaw: null };
+
+    if (/^(無|沒有|沒考|未考|未考取|無檢定|N\/A|NA|NONE)$/i.test(t0)) {
+      return { level: "未考取", unmappedRaw: null };
+    }
+
+    if (/教育部B卷205/i.test(t0)) return { level: "B1", unmappedRaw: null };
+    if (t0 === "教育部B1" || /^教育部\s*B1$/i.test(t0)) return { level: "B1", unmappedRaw: null };
+
+    if (t0 === "高級") return { level: "C1", unmappedRaw: null };
+    if (t0 === "422") return { level: "C1", unmappedRaw: null };
+
+    if (/^[Bb]$/.test(t0)) return { level: "B1", unmappedRaw: null };
+
+    return { level: "（待標準化）", unmappedRaw: t0 };
   }
 
   function certSortKey(label) {
@@ -117,13 +157,14 @@
       corr = parseCorr(r["trialkeyboard.corr"]);
       if (!Number.isFinite(corr)) corr = 0;
     }
-    return {
+    const o = {
       participant,
       fileName,
       rtMs,
       corr,
       key: itemKey(r),
       漢字: trimStr(r["漢字"]),
+      臺羅: trimStr(r["臺羅"]) || trimStr(r["台羅"]),
       分組: trimStr(r["分組"]),
       isword: trimStr(r.isword),
       台語詞頻分組: trimStr(r["台語詞頻分組"]),
@@ -132,6 +173,8 @@
       thisIndex: trimStr(r["trialloop.thisIndex"]),
       imputed: false,
     };
+    o.ab組 = trialAbGroup(o);
+    return o;
   }
 
   function imputedMissingTrial(thisN, participant, fileName) {
@@ -142,6 +185,7 @@
       corr: 0,
       key: "__csv_missing_thisN__:" + thisN,
       漢字: "（CSV 缺此試次列）",
+      臺羅: "",
       分組: "（資料缺列）",
       isword: "",
       台語詞頻分組: "",
@@ -149,6 +193,7 @@
       ifile: "",
       thisIndex: String(thisN),
       imputed: true,
+      ab組: AB_GROUP_OTHER,
     };
   }
 
@@ -183,6 +228,25 @@
     const grp = trimStr(row["分組"]);
     const iw = trimStr(row.isword);
     return "han:" + han + "|" + grp + "|" + iw;
+  }
+
+  /**
+   * 將 CSV 之分組與詞頻欄位對應為本實驗之 A–F 組別。
+   * A–D：台華共同詞（實驗材料）× 華／台詞頻懸低；E：純台語詞；F：假詞。
+   */
+  function trialAbGroup(t) {
+    const grp = trimStr(t.分組);
+    const tw = trimStr(t.台語詞頻分組);
+    const hua = trimStr(t.華語詞頻分組);
+    if (/filler_假詞/.test(grp) || (grp.includes("假詞") && !grp.includes("純台語"))) return "F";
+    if (/filler_純台語/.test(grp) || grp.includes("純台語")) return "E";
+    if (grp === "實驗材料" || grp.includes("共同")) {
+      if (hua === "懸" && tw === "懸") return "A";
+      if (hua === "懸" && tw === "低") return "B";
+      if (hua === "低" && tw === "懸") return "C";
+      if (hua === "低" && tw === "低") return "D";
+    }
+    return AB_GROUP_OTHER;
   }
 
   function mean(arr) {
@@ -309,7 +373,9 @@
           rec = {
             key: t.key,
             漢字: t.漢字,
+            臺羅: trimStr(t.臺羅),
             分組: t.分組,
+            ab組: t.ab組,
             isword: t.isword,
             台語詞頻分組: t.台語詞頻分組,
             華語詞頻分組: t.華語詞頻分組,
@@ -319,6 +385,8 @@
             corrs: [],
           };
           map.set(t.key, rec);
+        } else if (!trimStr(rec.臺羅) && trimStr(t.臺羅)) {
+          rec.臺羅 = trimStr(t.臺羅);
         }
         rec.rts.push(t.rtMs);
         if (t.corr === 1) rec.rtsCorrect.push(t.rtMs);
@@ -338,12 +406,12 @@
     return { n, acc, mAll, sdAll, mCor, sdCor };
   }
 
-  function aggregateByGroup(completedFiles) {
+  function aggregateByAbGroup(completedFiles) {
     const buckets = new Map();
     for (let fi = 0; fi < completedFiles.length; fi++) {
       for (let ti = 0; ti < completedFiles[fi].trials.length; ti++) {
         const t = completedFiles[fi].trials[ti];
-        const g = t.分組 || "（空白）";
+        const g = t.ab組 || AB_GROUP_OTHER;
         let b = buckets.get(g);
         if (!b) {
           b = { rts: [], rtsCorrect: [], corrs: [] };
@@ -354,7 +422,9 @@
         b.corrs.push(t.corr);
       }
     }
-    const labels = Array.from(buckets.keys()).sort();
+    const rest = Array.from(buckets.keys()).filter((k) => AB_GROUP_ORDER.indexOf(k) === -1);
+    rest.sort();
+    const labels = AB_GROUP_ORDER.filter((k) => buckets.has(k)).concat(rest);
     const meanRtCorr = labels.map((lab) => {
       const b = buckets.get(lab);
       return b.rtsCorrect.length ? mean(b.rtsCorrect) : null;
@@ -440,6 +510,7 @@
     if (!el) return;
     const y = labels.map((_, i) => (rtMs[i] == null ? null : rtMs[i]));
     const text = labels.map((_, i) => (rtMs[i] == null ? "—" : Math.round(rtMs[i]) + " ms"));
+    const customdata = labels.map((lab) => [abGroupDefinitionText(lab)]);
     Plotly.react(
       el,
       [
@@ -450,14 +521,18 @@
           text,
           textposition: "outside",
           marker: { color: "#2980b9" },
+          customdata,
+          hovertemplate:
+            "<b>%{x}</b><br>%{customdata[0]}<br><br>平均 RT（僅正確）：%{y:.0f} ms<extra></extra>",
         },
       ],
       {
         ...plotlyLayoutBase,
-        title: { text: "依「分組」：正確試次之平均 RT" },
-        xaxis: { title: "分組", tickangle: -25 },
+        title: { text: "依實驗組別（A–F）：正確試次之平均 RT" },
+        xaxis: { title: "組別", tickangle: 0 },
         yaxis: { title: "RT（ms）" },
-        margin: { ...plotlyLayoutBase.margin, b: 100 },
+        margin: { ...plotlyLayoutBase.margin, b: 56 },
+        hoverlabel: { align: "left", font: { size: 12 } },
       },
       { responsive: true }
     );
@@ -466,6 +541,7 @@
   function plotGroupAcc(elId, labels, acc) {
     const el = document.getElementById(elId);
     if (!el) return;
+    const customdata = labels.map((lab) => [abGroupDefinitionText(lab)]);
     Plotly.react(
       el,
       [
@@ -476,17 +552,135 @@
           text: acc.map((a) => (Number.isFinite(a) ? (a * 100).toFixed(1) + "%" : "—")),
           textposition: "outside",
           marker: { color: "#1e8449" },
+          customdata,
+          hovertemplate:
+            "<b>%{x}</b><br>%{customdata[0]}<br><br>正確率：%{y:.1f}%<extra></extra>",
         },
       ],
       {
         ...plotlyLayoutBase,
-        title: { text: "依「分組」：正確率" },
-        xaxis: { title: "分組", tickangle: -25 },
+        title: { text: "依實驗組別（A–F）：正確率" },
+        xaxis: { title: "組別", tickangle: 0 },
         yaxis: { title: "正確率（%）", range: [0, 105] },
-        margin: { ...plotlyLayoutBase.margin, b: 100 },
+        margin: { ...plotlyLayoutBase.margin, b: 56 },
+        hoverlabel: { align: "left", font: { size: 12 } },
       },
       { responsive: true }
     );
+  }
+
+  function abGroupsInItemMap(itemMap) {
+    const present = new Set();
+    itemMap.forEach((rec) => present.add(rec.ab組 || AB_GROUP_OTHER));
+    const ordered = [];
+    for (let i = 0; i < AB_GROUP_ORDER.length; i++) {
+      if (present.has(AB_GROUP_ORDER[i])) ordered.push(AB_GROUP_ORDER[i]);
+    }
+    const rest = Array.from(present).filter((k) => AB_GROUP_ORDER.indexOf(k) === -1);
+    rest.sort();
+    return ordered.concat(rest);
+  }
+
+  /** 字卡右上角：isword 1 真詞／0 假詞；無欄位則不顯示徽章 */
+  function stimWordTypeBadge(isword) {
+    const s = String(isword).trim();
+    if (s === "1") return { text: "真詞", cls: "stim-badge stim-badge--real" };
+    if (s === "0") return { text: "假詞", cls: "stim-badge stim-badge--pseudo" };
+    return null;
+  }
+
+  /** 詞頻標籤底色依「懸／低」區分；其餘值用中性樣式 */
+  function stimFreqTagClass(freqVal) {
+    const f = trimStr(freqVal);
+    if (f === "懸") return "stim-tag stim-tag--freq-xuan";
+    if (f === "低") return "stim-tag stim-tag--freq-di";
+    return "stim-tag stim-tag--freq-other";
+  }
+
+  function renderBrowseAbCards(host, itemMap, letter) {
+    if (!host) return;
+    host.innerHTML = "";
+    const items = [];
+    itemMap.forEach((rec) => {
+      if ((rec.ab組 || AB_GROUP_OTHER) !== letter) return;
+      items.push(rec);
+    });
+    items.sort((a, b) => {
+      const ka = String(a.ifile || a.漢字 || a.臺羅 || "");
+      const kb = String(b.ifile || b.漢字 || b.臺羅 || "");
+      return ka.localeCompare(kb, "zh-Hant");
+    });
+    if (!items.length) {
+      const p = document.createElement("p");
+      p.className = "subtext";
+      p.textContent = "目前載入的完成資料中，此組尚無題目列。";
+      host.appendChild(p);
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = "browse-stim-grid";
+    for (let i = 0; i < items.length; i++) {
+      const rec = items[i];
+      const han = trimStr(rec.漢字);
+      const tl = trimStr(rec.臺羅);
+      const twFreq = trimStr(rec.台語詞頻分組);
+      const huaFreq = trimStr(rec.華語詞頻分組);
+      const badge = stimWordTypeBadge(rec.isword);
+
+      const inner = document.createElement("div");
+      inner.className = "stim-card-inner";
+      if (han) {
+        const el = document.createElement("div");
+        el.className = "stim-han";
+        el.textContent = han;
+        inner.appendChild(el);
+      }
+      if (tl) {
+        const el = document.createElement("div");
+        el.className = "stim-tl";
+        el.textContent = tl;
+        inner.appendChild(el);
+      }
+
+      if (twFreq || huaFreq) {
+        const tags = document.createElement("div");
+        tags.className = "stim-tags";
+        if (twFreq) {
+          const t = document.createElement("span");
+          t.className = stimFreqTagClass(twFreq);
+          t.textContent = "台語詞頻：" + twFreq;
+          tags.appendChild(t);
+        }
+        if (huaFreq) {
+          const t = document.createElement("span");
+          t.className = stimFreqTagClass(huaFreq);
+          t.textContent = "華語詞頻：" + huaFreq;
+          tags.appendChild(t);
+        }
+        inner.appendChild(tags);
+      }
+
+      if (!inner.firstChild && !badge) continue;
+
+      const card = document.createElement("article");
+      card.className = "stim-card" + (badge ? "" : " stim-card--no-badge");
+      if (badge) {
+        const b = document.createElement("span");
+        b.className = badge.cls;
+        b.textContent = badge.text;
+        card.appendChild(b);
+      }
+      if (inner.firstChild) card.appendChild(inner);
+      grid.appendChild(card);
+    }
+    if (!grid.children.length) {
+      const p = document.createElement("p");
+      p.className = "subtext";
+      p.textContent = "此組題目在資料中尚無漢字、臺羅或詞頻欄位可顯示。";
+      host.appendChild(p);
+      return;
+    }
+    host.appendChild(grid);
   }
 
   function uniqueSorted(values) {
@@ -525,6 +719,7 @@
     tbody.innerHTML = "";
     const rows = [];
     itemMap.forEach((rec) => {
+      if (filters.ab組 && rec.ab組 !== filters.ab組) return;
       if (filters.分組 && rec.分組 !== filters.分組) return;
       if (filters.isword !== "" && String(rec.isword) !== filters.isword) return;
       if (filters.tw && (rec.台語詞頻分組 || "（空白）") !== filters.tw) return;
@@ -544,6 +739,7 @@
       const cells = [
         rec.漢字 || "—",
         rec.ifile || "—",
+        rec.ab組 || "—",
         rec.分組 || "—",
         String(rec.isword !== "" ? rec.isword : "—"),
         rec.台語詞頻分組 || "—",
@@ -564,7 +760,7 @@
     }
   }
 
-  function renderQualityTables(host, q) {
+  function renderQualityTables(host, q, certUnmappedLines) {
     host.innerHTML = "";
 
     function block(title, items, cls) {
@@ -595,6 +791,13 @@
     block("載入或解析失敗", q.loadErrors);
     block("未完成實驗（未納入統計）", q.incomplete, "warn-list");
     block("已完成但試次數異常", q.badTrialCount, "warn-list");
+    if (certUnmappedLines && certUnmappedLines.length) {
+      block(
+        "台語檢定成績：尚無標準化規則之原始填答（圖表暫歸「（待標準化）」；可於 ldt-report.js 的 normalizeCert 增列對應）",
+        certUnmappedLines,
+        "warn-list"
+      );
+    }
     block("其他提示", q.other);
   }
 
@@ -655,13 +858,23 @@
     const ages = [];
     const genders = [];
     const certs = [];
+    const certUnmappedLines = [];
     for (let i = 0; i < completed.length; i++) {
       const d = completed[i].demo;
       if (!d) continue;
       const age = parseNum(d["年齡"]);
       if (Number.isFinite(age)) ages.push(age);
       genders.push(normalizeGender(d["性別"]));
-      certs.push(normalizeCert(d["台語檢定成績"]));
+      const certNorm = normalizeCert(d["台語檢定成績"]);
+      certs.push(certNorm.level);
+      if (certNorm.unmappedRaw != null) {
+        certUnmappedLines.push(
+          completed[i].fileName +
+            "：原始填答「" +
+            certNorm.unmappedRaw +
+            "」尚無標準化規則，圖表暫歸「（待標準化）」"
+        );
+      }
     }
 
     const genderLabels = ["男", "女", "其他", "未知"];
@@ -681,9 +894,9 @@
 
     plotHistogram("chart-age", ages, "年齡分布（完成實驗者）");
     plotBarCounts("chart-gender", genderLabels, genderCounts, "性別分布（正規化後）", "類別");
-    plotBarCounts("chart-cert", uniqCert, certCounts, "台語檢定最高等級", "等級");
+    plotBarCounts("chart-cert", uniqCert, certCounts, "台語檢定最高等級（標準化：未考取／A1–C2）", "等級");
 
-    const grp = aggregateByGroup(completed);
+    const grp = aggregateByAbGroup(completed);
     plotGroupRt("chart-by-group-rt", grp.labels, grp.meanRtCorr);
     plotGroupAcc("chart-by-group-acc", grp.labels, grp.meanAcc);
 
@@ -691,17 +904,52 @@
     const all分組 = uniqueSorted(
       Array.from(itemMap.values()).map((r) => r.分組 || "（空白）")
     );
+    const allAb = abGroupsInItemMap(itemMap);
     const allIs = uniqueSorted(Array.from(itemMap.values()).map((r) => String(r.isword)));
     const allTw = uniqueSorted(Array.from(itemMap.values()).map((r) => r.台語詞頻分組));
     const allHua = uniqueSorted(Array.from(itemMap.values()).map((r) => r.華語詞頻分組));
 
+    const selAb = document.getElementById("filter-ab組");
+    const browseSel = document.getElementById("browse-ab-select");
+    const browseHost = document.getElementById("browse-ab-cards-host");
+
+    if (selAb) fillSelect(selAb, allAb, true);
     fillSelect(sel分組, all分組, true);
     fillSelect(selIsword, allIs, true);
     fillSelect(selTw, allTw, true);
     fillSelect(selHua, allHua, true);
 
+    if (browseSel && browseHost) {
+      browseSel.innerHTML = "";
+      if (!allAb.length) {
+        const o = document.createElement("option");
+        o.value = "";
+        o.textContent = "（無完成資料之題目）";
+        browseSel.appendChild(o);
+        browseHost.innerHTML = "";
+        const p = document.createElement("p");
+        p.className = "subtext";
+        p.textContent = "尚無已完成實驗之 CSV，無法列出題目。";
+        browseHost.appendChild(p);
+      } else {
+        for (let i = 0; i < allAb.length; i++) {
+          const lab = allAb[i];
+          const o = document.createElement("option");
+          o.value = lab;
+          o.textContent = lab + " 組";
+          browseSel.appendChild(o);
+        }
+        browseSel.value = allAb[0];
+        renderBrowseAbCards(browseHost, itemMap, browseSel.value);
+        browseSel.onchange = function () {
+          renderBrowseAbCards(browseHost, itemMap, browseSel.value);
+        };
+      }
+    }
+
     function applyFilters() {
       renderItemTable(tbody, itemMap, {
+        ab組: selAb ? selAb.value : "",
         分組: sel分組.value,
         isword: selIsword.value,
         tw: selTw.value,
@@ -709,13 +957,14 @@
       });
     }
 
+    if (selAb) selAb.onchange = applyFilters;
     sel分組.onchange = applyFilters;
     selIsword.onchange = applyFilters;
     selTw.onchange = applyFilters;
     selHua.onchange = applyFilters;
 
     applyFilters();
-    renderQualityTables(qualityHost, q);
+    renderQualityTables(qualityHost, q, certUnmappedLines);
 
     statusEl.textContent =
       "已載入 " +
