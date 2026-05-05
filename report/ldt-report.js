@@ -660,6 +660,9 @@
     const el = document.getElementById(elId);
     if (!el) return;
     const y = labels.map((_, i) => (rtMs[i] == null ? null : rtMs[i]));
+    const finiteY = y.filter((v) => Number.isFinite(v));
+    const yMax = finiteY.length ? Math.max.apply(null, finiteY) : 0;
+    const yTop = yMax > 0 ? yMax * 1.12 : null;
     const text = labels.map((_, i) =>
       rtMs[i] == null ? "—" : Math.round(rtMs[i]) + " ms",
     );
@@ -673,6 +676,7 @@
           y,
           text,
           textposition: "outside",
+          cliponaxis: false,
           marker: { color: "#2980b9" },
           customdata,
           hovertemplate:
@@ -683,8 +687,11 @@
         ...plotlyLayoutBase,
         title: { text: "依實驗組別（A–F）：正確試次之平均 RT" },
         xaxis: { title: "組別", tickangle: 0 },
-        yaxis: { title: "RT（ms）" },
-        margin: { ...plotlyLayoutBase.margin, b: 56 },
+        yaxis: {
+          title: "RT（ms）",
+          range: yTop ? [0, yTop] : undefined,
+        },
+        margin: { ...plotlyLayoutBase.margin, b: 56, t: 56 },
         hoverlabel: { align: "left", font: { size: 12 } },
       },
       { responsive: true },
