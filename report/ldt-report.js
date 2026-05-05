@@ -85,6 +85,7 @@
     if (t0 === "教育部B1" || /^教育部\s*B1$/i.test(t0))
       return { level: "B1", unmappedRaw: null };
 
+    if (t0 === "教育部高級") return { level: "C1", unmappedRaw: null };
     if (t0 === "高級") return { level: "C1", unmappedRaw: null };
     if (t0 === "422") return { level: "C1", unmappedRaw: null };
     if (t0 === "通過C2") return { level: "C2", unmappedRaw: null };
