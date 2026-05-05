@@ -105,6 +105,26 @@
     return Number.isFinite(n) ? n : NaN;
   }
 
+  /** 單人作答區：年齡、性別、台語檢定（與第 4 節圖表相同之正規化規則） */
+  function subjectTrialDemoSummary(file) {
+    const d = file && file.demo;
+    if (!d) {
+      return "年齡：—　性別：—　台語檢定最高等級：—";
+    }
+    const ageRaw = parseNum(d["年齡"]);
+    const ageStr = Number.isFinite(ageRaw) ? String(Math.round(ageRaw)) : "—";
+    const gender = normalizeGender(d["性別"]);
+    const certLevel = normalizeCert(d["台語檢定成績"]).level;
+    return (
+      "年齡：" +
+      ageStr +
+      "　性別：" +
+      gender +
+      "　台語檢定最高等級：" +
+      certLevel
+    );
+  }
+
   function parseCorr(v) {
     const n = parseNum(v);
     if (n === 1) return 1;
@@ -1637,6 +1657,178 @@
     return NaN;
   }
 
+  /** 逐題字卡：華／台詞頻分組佮真／假詞（與題目瀏覽區相同之標籤樣式） */
+  function appendItemStatStimMeta(card, rec) {
+    const hua = trimStr(rec.華語詞頻分組);
+    const tw = trimStr(rec.台語詞頻分組);
+    const bar = document.createElement("div");
+    bar.className = "item-stat-stim-meta browse-group-summary";
+    const huaSp = document.createElement("span");
+    huaSp.className = stimFreqTagClass(hua || "—");
+    huaSp.textContent = "華語詞頻：" + (hua || "—");
+    bar.appendChild(huaSp);
+    const twSp = document.createElement("span");
+    twSp.className = stimFreqTagClass(tw || "—");
+    twSp.textContent = "台語詞頻：" + (tw || "—");
+    bar.appendChild(twSp);
+    const badge = stimWordTypeBadge(rec.isword);
+    if (badge) {
+      const bEl = document.createElement("span");
+      bEl.className = badge.cls;
+      bEl.textContent = "真詞／假詞：" + badge.text;
+      bar.appendChild(bEl);
+    } else {
+      const unk = document.createElement("span");
+      unk.className = "stim-tag stim-tag--freq-other";
+      unk.textContent = "真詞／假詞：—";
+      bar.appendChild(unk);
+    }
+    card.appendChild(bar);
+  }
+
+  /**
+   * 依呈現順序（thisIndex，無則陣列序）走訪試次，分到 A–F；（其他）另列，排版時接在 F
+   * 試次之後、仍填於第 6–10 欄。
+   */
+  function partitionTrialsByAbPresentationOrder(trials) {
+    const annotated = [];
+    for (let i = 0; i < trials.length; i++) {
+      annotated.push({ t: trials[i], ord: i });
+    }
+    annotated.sort((a, b) => {
+      const ia = parseNum(a.t.thisIndex);
+      const ib = parseNum(b.t.thisIndex);
+      const fa = Number.isFinite(ia) ? ia : a.ord;
+      const fb = Number.isFinite(ib) ? ib : b.ord;
+      return fa - fb;
+    });
+    const buckets = { A: [], B: [], C: [], D: [], E: [], F: [] };
+    const other = [];
+    for (let j = 0; j < annotated.length; j++) {
+      const t = annotated[j].t;
+      const g = t.ab組;
+      if (buckets[g]) buckets[g].push(t);
+      else other.push(t);
+    }
+    return { buckets, other };
+  }
+
+  function trialDisplayWord(t) {
+    const han = trimStr(t.漢字);
+    if (han) return han;
+    const tl = trimStr(t.臺羅);
+    if (tl) return tl;
+    return "—";
+  }
+
+  function appendSubjectTrialGridCell(grid, t, rtCap) {
+    const cell = document.createElement("div");
+    cell.className = "subject-trial-cell";
+    if (!t) {
+      cell.classList.add("subject-trial-cell--empty");
+      const w = document.createElement("div");
+      w.className = "subject-trial-word";
+      w.textContent = "—";
+      cell.appendChild(w);
+      grid.appendChild(cell);
+      return;
+    }
+    const ok = t.corr === 1;
+    cell.classList.add(ok ? "subject-trial-cell--ok" : "subject-trial-cell--bad");
+    const ab = trimStr(t.ab組) || "—";
+    const rt = Number.isFinite(t.rtMs) ? t.rtMs : NO_RESPONSE_RT_MS;
+    cell.title =
+      ab +
+      " 組 · RT " +
+      Math.round(rt) +
+      " ms · " +
+      (ok ? "正確" : "錯誤") +
+      (t.imputed ? "（補齊列）" : "");
+
+    const word = document.createElement("div");
+    word.className = "subject-trial-word";
+    word.textContent = trialDisplayWord(t);
+    cell.appendChild(word);
+
+    const track = document.createElement("div");
+    track.className = "subject-trial-rt-track";
+    const fill = document.createElement("div");
+    fill.className =
+      "subject-trial-rt-fill " +
+      (ok ? "subject-trial-rt-fill--ok" : "subject-trial-rt-fill--bad");
+    const pct = rtCap > 0 ? Math.min(100, (rt / rtCap) * 100) : 0;
+    fill.style.width = pctClamp01(pct) + "%";
+    track.appendChild(fill);
+    cell.appendChild(track);
+
+    grid.appendChild(cell);
+  }
+
+  function renderSubjectTrialGrid(host, file) {
+    if (!host) return;
+    host.innerHTML = "";
+    if (!file || !file.trials || !file.trials.length) {
+      const p = document.createElement("p");
+      p.className = "subtext";
+      p.textContent = "無試次可顯示。";
+      host.appendChild(p);
+      return;
+    }
+    const { buckets, other } = partitionTrialsByAbPresentationOrder(
+      file.trials,
+    );
+    const fSequence = buckets.F.concat(other);
+    const hA = buckets.A.length;
+    const hB = buckets.B.length;
+    const hC = buckets.C.length;
+    const hD = buckets.D.length;
+    const hE = buckets.E.length;
+    const fRows = fSequence.length ? Math.ceil(fSequence.length / 5) : 0;
+    const R = Math.max(hA, hB, hC, hD, hE, fRows);
+
+    const wrap = document.createElement("div");
+    wrap.className = "subject-trial-grid-wrap";
+
+    const headers = document.createElement("div");
+    headers.className = "subject-trial-col-headers";
+    const labels = ["A 組", "B 組", "C 組", "D 組", "E 組"];
+    for (let hi = 0; hi < labels.length; hi++) {
+      const el = document.createElement("div");
+      el.className = "subject-trial-col-head";
+      el.textContent = labels[hi];
+      headers.appendChild(el);
+    }
+    const hF = document.createElement("div");
+    hF.className = "subject-trial-col-head subject-trial-col-head--f";
+    hF.textContent = "F 組";
+    headers.appendChild(hF);
+
+    const grid = document.createElement("div");
+    grid.className = "subject-trial-grid subject-trial-grid--cols";
+    grid.style.gridTemplateRows = "repeat(" + R + ", minmax(48px, auto))";
+
+    const rtCap = NO_RESPONSE_RT_MS;
+    for (let r = 0; r < R; r++) {
+      appendSubjectTrialGridCell(grid, r < hA ? buckets.A[r] : null, rtCap);
+      appendSubjectTrialGridCell(grid, r < hB ? buckets.B[r] : null, rtCap);
+      appendSubjectTrialGridCell(grid, r < hC ? buckets.C[r] : null, rtCap);
+      appendSubjectTrialGridCell(grid, r < hD ? buckets.D[r] : null, rtCap);
+      appendSubjectTrialGridCell(grid, r < hE ? buckets.E[r] : null, rtCap);
+      for (let k = 0; k < 5; k++) {
+        const idx = r * 5 + k;
+        appendSubjectTrialGridCell(
+          grid,
+          idx < fSequence.length ? fSequence[idx] : null,
+          rtCap,
+        );
+      }
+    }
+
+    wrap.appendChild(headers);
+    wrap.appendChild(grid);
+    host.appendChild(wrap);
+  }
+
   function computeRtBarScaleMs(sortedRows) {
     let rtMax = 0;
     for (let i = 0; i < sortedRows.length; i++) {
@@ -1754,6 +1946,7 @@
       }
       head.appendChild(titles);
       card.appendChild(head);
+      appendItemStatStimMeta(card, rec);
 
       const ifile = trimStr(rec.ifile);
       if (ifile) {
@@ -2132,6 +2325,87 @@
     if (selItemSort) selItemSort.onchange = applyItemCards;
 
     applyItemCards();
+
+    const subjToolbar = document.getElementById("subject-trial-toolbar");
+    const subjPrev = document.getElementById("subject-trial-prev");
+    const subjNext = document.getElementById("subject-trial-next");
+    const subjRandom = document.getElementById("subject-trial-random");
+    const subjLabel = document.getElementById("subject-trial-label");
+    const subjDemo = document.getElementById("subject-trial-demo");
+    const subjGridHost = document.getElementById("subject-trial-grid-host");
+    const completedSorted = completed
+      .slice()
+      .sort((a, b) =>
+        String(a.fileName).localeCompare(String(b.fileName), "zh-Hant"),
+      );
+    const subjState = { idx: 0 };
+
+    function subjectTrialLabelText(f, idx, total) {
+      const pid = trimStr(f.participant) || "（無編號）";
+      return (
+        "受試者 " +
+        (idx + 1) +
+        " / " +
+        total +
+        "：" +
+        pid +
+        " · " +
+        f.fileName
+      );
+    }
+
+    function refreshSubjectTrialView() {
+      if (!subjGridHost) return;
+      const n = completedSorted.length;
+      if (!n) {
+        if (subjToolbar) subjToolbar.style.display = "none";
+        if (subjDemo) subjDemo.textContent = "";
+        subjGridHost.innerHTML = "";
+        const p = document.createElement("p");
+        p.className = "subtext";
+        p.textContent = "尚無已完成實驗之資料，無法顯示單人作答總覽。";
+        subjGridHost.appendChild(p);
+        return;
+      }
+      if (subjToolbar) subjToolbar.style.display = "flex";
+      subjState.idx = Math.max(0, Math.min(subjState.idx, n - 1));
+      const f = completedSorted[subjState.idx];
+      if (subjLabel) subjLabel.textContent = subjectTrialLabelText(f, subjState.idx, n);
+      if (subjDemo) subjDemo.textContent = subjectTrialDemoSummary(f);
+      const dis = n <= 1;
+      if (subjPrev) subjPrev.disabled = dis;
+      if (subjNext) subjNext.disabled = dis;
+      if (subjRandom) subjRandom.disabled = dis;
+      renderSubjectTrialGrid(subjGridHost, f);
+    }
+
+    if (subjPrev)
+      subjPrev.onclick = function () {
+        const n = completedSorted.length;
+        if (n) subjState.idx = (subjState.idx - 1 + n) % n;
+        refreshSubjectTrialView();
+      };
+    if (subjNext)
+      subjNext.onclick = function () {
+        const n = completedSorted.length;
+        if (n) subjState.idx = (subjState.idx + 1) % n;
+        refreshSubjectTrialView();
+      };
+    if (subjRandom)
+      subjRandom.onclick = function () {
+        const n = completedSorted.length;
+        if (n < 2) return;
+        let r = subjState.idx;
+        for (let k = 0; k < 12; k++) {
+          r = Math.floor(Math.random() * n);
+          if (r !== subjState.idx) break;
+        }
+        subjState.idx = r;
+        refreshSubjectTrialView();
+      };
+
+    refreshSubjectTrialView();
+
     renderQualityTables(qualityHost, q, certUnmappedLines);
 
     statusEl.textContent =

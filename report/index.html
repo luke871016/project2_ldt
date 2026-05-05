@@ -82,7 +82,7 @@
         filter: brightness(1.08);
       }
       .page-wrap {
-        max-width: 1100px;
+        max-width: 1240px;
         margin: 0 auto;
         padding: 0 20px 60px;
       }
@@ -513,6 +513,9 @@
         flex: 1;
         min-width: 0;
       }
+      .item-stat-stim-meta {
+        margin-top: 8px;
+      }
       .item-stat-card .stim-han {
         font-size: 1.15rem;
         font-weight: 700;
@@ -609,6 +612,156 @@
         background: var(--accent);
         opacity: 0.9;
       }
+
+      .subject-trial-toolbar {
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .subject-trial-center-col {
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 8px;
+      }
+      .subject-trial-label {
+        font-size: 13px;
+        color: var(--text);
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.45;
+        word-break: break-all;
+      }
+      .subject-trial-demo {
+        font-size: 12px;
+        color: var(--subtext);
+        text-align: center;
+        line-height: 1.5;
+        max-width: 42rem;
+      }
+      .subject-trial-random-btn {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .subject-trial-random-btn:hover {
+        filter: brightness(1.08);
+      }
+      .subject-trial-viewport {
+        width: 100%;
+        max-height: min(72vh, 560px);
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #eef1f4;
+        padding: 6px;
+        box-sizing: border-box;
+      }
+      .subject-trial-grid-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-width: 0;
+      }
+      .subject-trial-col-headers {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(5, minmax(0, 1fr));
+        gap: 4px;
+        margin-bottom: 6px;
+      }
+      .subject-trial-col-head {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--primary);
+        padding: 6px 4px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-sizing: border-box;
+      }
+      .subject-trial-col-head--f {
+        grid-column: span 5;
+      }
+      .subject-trial-grid {
+        display: grid;
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+        gap: 4px;
+        min-width: 0;
+      }
+      .subject-trial-grid--cols {
+        align-content: start;
+      }
+      .subject-trial-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+        padding: 5px 4px 5px;
+        border-radius: 5px;
+        border: 1px solid rgba(44, 62, 80, 0.12);
+        min-width: 0;
+        min-height: 0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+      .subject-trial-cell--ok {
+        background: rgba(30, 132, 73, 0.88);
+        color: #fff;
+      }
+      .subject-trial-cell--bad {
+        background: rgba(192, 57, 43, 0.9);
+        color: #fff;
+      }
+      .subject-trial-cell--empty {
+        background: #dfe4ea;
+        color: var(--subtext);
+        border-style: dashed;
+        opacity: 0.85;
+      }
+      .subject-trial-word {
+        font-size: clamp(10px, 1.15vw, 12.5px);
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.25;
+        word-break: break-word;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+      }
+      .subject-trial-rt-track {
+        margin-top: 5px;
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.35);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .subject-trial-cell--bad .subject-trial-rt-track {
+        background: rgba(0, 0, 0, 0.15);
+      }
+      .subject-trial-rt-fill {
+        height: 100%;
+        border-radius: 3px;
+        min-width: 2px;
+        max-width: 100%;
+      }
+      .subject-trial-rt-fill--ok {
+        background: rgba(127, 196, 252, 0.95);
+      }
+      .subject-trial-rt-fill--bad {
+        background: rgba(255, 200, 200, 0.95);
+      }
     </style>
   </head>
   <body>
@@ -621,6 +774,7 @@
       <a href="#sec-group">依 A–F 組</a>
       <a href="#sec-freq-rm">華×台詞頻</a>
       <a href="#sec-items">題目統計</a>
+      <a href="#sec-subject-trials">單人作答</a>
       <a href="#sec-quality">資料品質</a>
       <div class="nav-actions">
         <button type="button" id="btn-reload">重新載入</button>
@@ -843,8 +997,54 @@
         <div id="item-cards-host"></div>
       </section>
 
+      <section id="sec-subject-trials">
+        <h2><span class="sec-num">8</span>單一受試者：八十題作答總覽</h2>
+        <p class="subtext">
+          以左右箭頭切換已完成實驗之受試者，「隨機抽查」會改抽另一位（至少兩人時）。下方為<strong>10
+          欄</strong>：由左而右第 1–5 欄各為 A–E 組（每欄由上而下為該組試次，呈現順序與實驗相同）；第
+          6–10 欄為 F 組，由左而右、由上而下填滿。表頭標示組別。格內為詞彙（優先漢字，無則臺羅）、底線為
+          RT 長條（以 5000ms
+          為滿幅）；綠底為正確、紅底為錯誤（含逾時未答）。無法歸入 A–F 之試次列於 F
+          區後段。若視窗較小可捲動檢視。
+        </p>
+        <div
+          id="subject-trial-toolbar"
+          class="browse-nav-row subject-trial-toolbar"
+          style="display: none"
+        >
+          <button
+            type="button"
+            id="subject-trial-prev"
+            class="browse-nav-btn"
+            aria-label="上一位受試者"
+            title="上一位受試者"
+          >
+            ‹
+          </button>
+          <div class="subject-trial-center-col">
+            <div id="subject-trial-label" class="subject-trial-label"></div>
+            <div id="subject-trial-demo" class="subject-trial-demo"></div>
+            <button type="button" id="subject-trial-random" class="subject-trial-random-btn">
+              隨機抽查
+            </button>
+          </div>
+          <button
+            type="button"
+            id="subject-trial-next"
+            class="browse-nav-btn"
+            aria-label="下一位受試者"
+            title="下一位受試者"
+          >
+            ›
+          </button>
+        </div>
+        <div class="subject-trial-viewport">
+          <div id="subject-trial-grid-host"></div>
+        </div>
+      </section>
+
       <section id="sec-quality">
-        <h2><span class="sec-num">8</span>資料品質與排除說明</h2>
+        <h2><span class="sec-num">9</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
           <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。
