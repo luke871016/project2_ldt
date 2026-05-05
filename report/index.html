@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>台語雙音節 LDT 實驗 — 結果報告（初版）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Iansui&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
@@ -18,6 +21,7 @@
         --border: #dde2e8;
         --text: #2c3e50;
         --subtext: #5d6d7e;
+        --font-stimuli: "Iansui", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
       }
       * {
         box-sizing: border-box;
@@ -426,6 +430,7 @@
         line-height: 1.35;
         margin: 0 0 4px;
         word-break: break-word;
+        font-family: var(--font-stimuli);
       }
       .stim-card .stim-tl {
         font-size: 1.28rem;
@@ -433,7 +438,7 @@
         color: var(--text);
         line-height: 1.35;
         word-break: break-word;
-        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
+        font-family: var(--font-stimuli);
       }
       .stim-tag {
         display: inline-block;
@@ -523,6 +528,7 @@
         line-height: 1.35;
         margin: 0 0 4px;
         word-break: break-word;
+        font-family: var(--font-stimuli);
       }
       .item-stat-card .stim-tl {
         font-size: 1.22rem;
@@ -530,7 +536,7 @@
         color: var(--text);
         line-height: 1.35;
         word-break: break-word;
-        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Charis SIL", sans-serif;
+        font-family: var(--font-stimuli);
       }
       .item-stat-ifile {
         font-size: 12px;
@@ -758,6 +764,7 @@
         text-align: center;
         line-height: 1.25;
         word-break: break-word;
+        font-family: var(--font-stimuli);
         flex: 1;
         display: flex;
         align-items: center;
@@ -1004,12 +1011,6 @@
 
       <section id="sec-items">
         <h2><span class="sec-num">7</span>逐條題目回答反應時間佮正確率</h2>
-        <p class="subtext">
-          以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。僅能以實驗組別
-          A–F 篩選；正確率橫條為整體正確比例（0–100%），不另標 SD。RT
-          橫條為列內共用比例尺；半透明區間為平均 ±1 SD（僅正確試次有足夠資料時為僅正確
-          RT 之 SD，否則為全部試次 RT 之 SD）。排序：RT 由快到慢；正確率由高到低。
-        </p>
         <div class="item-cards-toolbar">
           <label>
             組別（A–F）
