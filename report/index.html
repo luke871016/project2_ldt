@@ -679,6 +679,7 @@
         margin-bottom: 6px;
       }
       .subject-trial-col-head {
+        position: relative;
         text-align: center;
         font-size: 12px;
         font-weight: 700;
@@ -688,6 +689,30 @@
         border: 1px solid var(--border);
         border-radius: 6px;
         box-sizing: border-box;
+      }
+      .subject-trial-col-head[data-tip] {
+        cursor: help;
+      }
+      .subject-trial-col-head[data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 8px);
+        transform: translateX(-50%);
+        z-index: 8;
+        min-width: 180px;
+        max-width: min(280px, 90vw);
+        background: rgba(44, 62, 80, 0.96);
+        color: #fff;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 500;
+        line-height: 1.45;
+        text-align: left;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+        white-space: normal;
+        pointer-events: none;
       }
       .subject-trial-col-head--f {
         grid-column: span 5;
@@ -900,6 +925,10 @@
 
       <section id="sec-demo">
         <h2><span class="sec-num">4</span>受試者：年齡、性別、台語檢定</h2>
+        <p class="subtext">
+          僅統計<strong>納入回答分析</strong>之受試者（已完成八十題，且正式試次中至少有一筆正確）；全錯誤者見第
+          9 節「全錯誤排除」。
+        </p>
         <div class="chart-wrap" id="chart-age"></div>
         <div class="chart-row">
           <div class="chart-wrap" id="chart-gender"></div>
@@ -1047,7 +1076,7 @@
         <h2><span class="sec-num">9</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
-          <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。
+          <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。另：正式試次中<strong>無任一筆正確</strong>（可能全按反或皆逾時）之完成檔，自回答與聚合分析排除，並列於下方「全錯誤排除」。
         </div>
         <div id="quality-detail"></div>
       </section>

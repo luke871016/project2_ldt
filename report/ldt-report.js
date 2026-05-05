@@ -441,6 +441,17 @@
     return { incomplete, badTrialCount, loadErrors, other };
   }
 
+  /**
+   * 正式試次無任一 corr===1（全錯或逾時等）— 極端資料，不納入回答分析。
+   */
+  function fileAllTrialsIncorrect(f) {
+    if (!f || !f.trials || !f.trials.length) return false;
+    for (let i = 0; i < f.trials.length; i++) {
+      if (f.trials[i].corr === 1) return false;
+    }
+    return true;
+  }
+
   function buildItemMap(completedFiles) {
     const map = new Map();
     for (let fi = 0; fi < completedFiles.length; fi++) {
@@ -525,14 +536,17 @@
       stats.loadedOk +
       '</div><div class="lbl">成功解析</div></div>' +
       '<div class="stat-card"><div class="num">' +
-      stats.completed +
-      '</div><div class="lbl">完成實驗（納入統計）</div></div>' +
+      stats.completedEighty +
+      '</div><div class="lbl">完成實驗（八十題）</div></div>' +
+      '<div class="stat-card"><div class="num">' +
+      stats.inAnalysis +
+      '</div><div class="lbl">納入回答分析</div></div>' +
       '<div class="stat-card"><div class="num">' +
       stats.incomplete +
       '</div><div class="lbl">未完成</div></div>' +
       '<div class="stat-card"><div class="num">' +
       stats.totalTrials +
-      '</div><div class="lbl">納入之正式試次總數</div></div>' +
+      '</div><div class="lbl">納入分析之試次總數</div></div>' +
       "</div>";
   }
 
@@ -1791,16 +1805,28 @@
 
     const headers = document.createElement("div");
     headers.className = "subject-trial-col-headers";
-    const labels = ["A 組", "B 組", "C 組", "D 組", "E 組"];
+    const labels = ["A", "B", "C", "D", "E"];
     for (let hi = 0; hi < labels.length; hi++) {
+      const g = labels[hi];
       const el = document.createElement("div");
       el.className = "subject-trial-col-head";
-      el.textContent = labels[hi];
+      el.textContent = g + " 組";
+      if (AB_GROUP_DESC[g]) {
+        const tip = g + " 組：" + AB_GROUP_DESC[g];
+        el.setAttribute("data-tip", tip);
+        el.title = tip;
+      }
       headers.appendChild(el);
     }
     const hF = document.createElement("div");
     hF.className = "subject-trial-col-head subject-trial-col-head--f";
     hF.textContent = "F 組";
+    const fTip =
+      "F 組：" +
+      (AB_GROUP_DESC.F || "假詞。") +
+      "（此區後段可能接續顯示無法歸入 A–F 之試次）";
+    hF.setAttribute("data-tip", fTip);
+    hF.title = fTip;
     headers.appendChild(hF);
 
     const grid = document.createElement("div");
@@ -2013,7 +2039,7 @@
     host.appendChild(grid);
   }
 
-  function renderQualityTables(host, q, certUnmappedLines) {
+  function renderQualityTables(host, q, certUnmappedLines, excludedAllWrongLines) {
     host.innerHTML = "";
 
     function block(title, items, cls) {
@@ -2047,6 +2073,11 @@
     block("載入或解析失敗", q.loadErrors);
     block("未完成實驗（未納入統計）", q.incomplete, "warn-list");
     block("已完成但試次數異常", q.badTrialCount, "warn-list");
+    block(
+      "全錯誤排除（正式試次無任一筆正確，不納入回答分析）",
+      excludedAllWrongLines || [],
+      "warn-list",
+    );
     if (certUnmappedLines && certUnmappedLines.length) {
       block(
         "台語檢定成績：尚無標準化規則之原始填答（圖表暫歸「（待標準化）」；可於 ldt-report.js 的 normalizeCert 增列對應）",
@@ -2150,14 +2181,23 @@
     const completed = files.filter(
       (f) => f.ok && f.complete && f.trials.length === EXPECTED_TRIALS,
     );
+    const excludedAllWrong = completed.filter((f) => fileAllTrialsIncorrect(f));
+    const completedAnalyzed = completed.filter((f) => !fileAllTrialsIncorrect(f));
+    const excludedAllWrongLines = excludedAllWrong.map(
+      (f) =>
+        f.fileName +
+        "（participant " +
+        (trimStr(f.participant) || "—") +
+        "：正式試次無任一筆正確，已自回答分析排除）",
+    );
     const q = mergeQuality(files);
 
     const ages = [];
     const genders = [];
     const certs = [];
     const certUnmappedLines = [];
-    for (let i = 0; i < completed.length; i++) {
-      const d = completed[i].demo;
+    for (let i = 0; i < completedAnalyzed.length; i++) {
+      const d = completedAnalyzed[i].demo;
       if (!d) continue;
       const age = parseNum(d["年齡"]);
       if (Number.isFinite(age)) ages.push(age);
@@ -2166,7 +2206,7 @@
       certs.push(certNorm.level);
       if (certNorm.unmappedRaw != null) {
         certUnmappedLines.push(
-          completed[i].fileName +
+          completedAnalyzed[i].fileName +
             "：原始填答「" +
             certNorm.unmappedRaw +
             "」尚無標準化規則，圖表暫歸「（待標準化）」",
@@ -2185,39 +2225,43 @@
       (lab) => certs.filter((c) => c === lab).length,
     );
 
-    const totalTrials = completed.reduce((s, f) => s + f.trials.length, 0);
+    const totalTrials = completedAnalyzed.reduce(
+      (s, f) => s + f.trials.length,
+      0,
+    );
 
     renderStatCards(cardsEl, {
       manifestCount: files.length,
       loadedOk: files.filter((f) => f.ok).length,
-      completed: completed.length,
+      completedEighty: completed.length,
+      inAnalysis: completedAnalyzed.length,
       incomplete: files.filter((f) => f.ok && !f.complete).length,
       totalTrials,
     });
 
-    plotHistogram("chart-age", ages, "年齡分布（完成實驗者）");
+    plotHistogram("chart-age", ages, "年齡分布（納入分析者）");
     plotBarCounts(
       "chart-gender",
       genderLabels,
       genderCounts,
-      "性別分布（正規化後）",
+      "性別分布（納入分析者；正規化後）",
       "類別",
     );
     plotBarCounts(
       "chart-cert",
       uniqCert,
       certCounts,
-      "台語檢定最高等級（標準化：未考取／A1–C2）",
+      "台語檢定最高等級（納入分析者；標準化：未考取／A1–C2）",
       "等級",
     );
 
-    const grp = aggregateByAbGroup(completed);
+    const grp = aggregateByAbGroup(completedAnalyzed);
     plotGroupRt("chart-by-group-rt", grp.labels, grp.meanRtCorr);
     plotGroupAcc("chart-by-group-acc", grp.labels, grp.meanAcc);
 
-    renderFreqRmSection(completed);
+    renderFreqRmSection(completedAnalyzed);
 
-    const itemMap = buildItemMap(completed);
+    const itemMap = buildItemMap(completedAnalyzed);
     const allAb = abGroupsInItemMap(itemMap);
 
     const selAb = document.getElementById("filter-ab組");
@@ -2333,7 +2377,7 @@
     const subjLabel = document.getElementById("subject-trial-label");
     const subjDemo = document.getElementById("subject-trial-demo");
     const subjGridHost = document.getElementById("subject-trial-grid-host");
-    const completedSorted = completed
+    const completedSorted = completedAnalyzed
       .slice()
       .sort((a, b) =>
         String(a.fileName).localeCompare(String(b.fileName), "zh-Hant"),
@@ -2406,16 +2450,22 @@
 
     refreshSubjectTrialView();
 
-    renderQualityTables(qualityHost, q, certUnmappedLines);
+    renderQualityTables(qualityHost, q, certUnmappedLines, excludedAllWrongLines);
 
     statusEl.textContent =
       "已載入 " +
       files.length +
-      " 個檔案；納入統計 " +
+      " 個檔案；完成八十題 " +
       completed.length +
+      " 人；納入回答分析 " +
+      completedAnalyzed.length +
       " 人、" +
       totalTrials +
-      " 筆試次。";
+      " 筆試次" +
+      (excludedAllWrong.length
+        ? "（已排除全錯誤 " + excludedAllWrong.length + " 人）"
+        : "") +
+      "。";
   }
 
   global.LDT_REPORT_RUN = run;
