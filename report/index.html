@@ -649,6 +649,25 @@
         line-height: 1.5;
         max-width: 42rem;
       }
+      .subject-trial-exclude-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .subject-trial-exclude-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .subject-trial-exclude-hint {
+        font-size: 12px;
+        color: var(--subtext);
+      }
       .subject-trial-random-btn {
         background: var(--primary);
         color: #fff;
@@ -1054,6 +1073,13 @@
           <div class="subject-trial-center-col">
             <div id="subject-trial-label" class="subject-trial-label"></div>
             <div id="subject-trial-demo" class="subject-trial-demo"></div>
+            <div class="subject-trial-exclude-row">
+              <label for="subject-trial-exclude" class="subject-trial-exclude-label">
+                <input type="checkbox" id="subject-trial-exclude" />
+                排除（暫不納入整體統計）
+              </label>
+            </div>
+            <div class="subject-trial-exclude-hint">設定暫存於目前瀏覽器 localStorage</div>
             <button type="button" id="subject-trial-random" class="subject-trial-random-btn">
               隨機抽查
             </button>

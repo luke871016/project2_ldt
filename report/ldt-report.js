@@ -8,6 +8,8 @@
   const EXPECTED_TRIALS = 80;
   /** 題目最長等待秒數；未按鍵逾時列視為錯誤並以此毫秒計 RT */
   const NO_RESPONSE_RT_MS = 5000;
+  const MANUAL_EXCLUDE_STORAGE_KEY = "ldtReportManualExcludedSubjectsV1";
+  const SUBJECT_PICK_STORAGE_KEY = "ldtReportSubjectPickerCurrentV1";
 
   /** 圖表與聚合用的實驗組別順序（對應下方 trialAbGroup） */
   const AB_GROUP_ORDER = ["A", "B", "C", "D", "E", "F"];
@@ -307,6 +309,53 @@
     const m = mean(arr);
     const v = arr.reduce((s, x) => s + (x - m) * (x - m), 0) / (arr.length - 1);
     return Math.sqrt(v);
+  }
+
+  function safeLocalStorageGet(key) {
+    try {
+      if (typeof localStorage === "undefined") return null;
+      return localStorage.getItem(key);
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  function safeLocalStorageSet(key, value) {
+    try {
+      if (typeof localStorage === "undefined") return;
+      localStorage.setItem(key, value);
+    } catch (_err) {
+      // Ignore storage errors (private mode / quota / policy).
+    }
+  }
+
+  function subjectIdentityKey(file) {
+    if (!file) return "";
+    const pid = trimStr(file.participant) || "—";
+    const fileName = trimStr(file.fileName) || "—";
+    return fileName + "::" + pid;
+  }
+
+  function loadManualExcludedSet() {
+    const raw = safeLocalStorageGet(MANUAL_EXCLUDE_STORAGE_KEY);
+    if (!raw) return new Set();
+    try {
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return new Set();
+      const out = new Set();
+      for (let i = 0; i < arr.length; i++) {
+        const key = trimStr(arr[i]);
+        if (key) out.add(key);
+      }
+      return out;
+    } catch (_err) {
+      return new Set();
+    }
+  }
+
+  function saveManualExcludedSet(setObj) {
+    const arr = Array.from(setObj).sort();
+    safeLocalStorageSet(MANUAL_EXCLUDE_STORAGE_KEY, JSON.stringify(arr));
   }
 
   /**
@@ -2182,8 +2231,19 @@
     const completed = files.filter(
       (f) => f.ok && f.complete && f.trials.length === EXPECTED_TRIALS,
     );
+    const manualExcludedSet = loadManualExcludedSet();
+    const completedManuallyExcluded = completed.filter((f) =>
+      manualExcludedSet.has(subjectIdentityKey(f)),
+    );
     const excludedAllWrong = completed.filter((f) => fileAllTrialsIncorrect(f));
-    const completedAnalyzed = completed.filter((f) => !fileAllTrialsIncorrect(f));
+    const excludedAllWrongKeySet = new Set(
+      excludedAllWrong.map((f) => subjectIdentityKey(f)),
+    );
+    const completedAnalyzed = completed.filter(
+      (f) =>
+        !fileAllTrialsIncorrect(f) &&
+        !manualExcludedSet.has(subjectIdentityKey(f)),
+    );
     const excludedAllWrongLines = excludedAllWrong.map(
       (f) =>
         f.fileName +
@@ -2191,6 +2251,15 @@
         (trimStr(f.participant) || "—") +
         "：正式試次無任一筆正確，已自回答分析排除）",
     );
+    const excludedManualLines = completedManuallyExcluded.map((f) => {
+      const pid = trimStr(f.participant) || "—";
+      return (
+        f.fileName +
+        "（participant " +
+        pid +
+        "：已手動勾選排除，暫不納入整體統計）"
+      );
+    });
     const q = mergeQuality(files);
 
     const ages = [];
@@ -2378,12 +2447,26 @@
     const subjLabel = document.getElementById("subject-trial-label");
     const subjDemo = document.getElementById("subject-trial-demo");
     const subjGridHost = document.getElementById("subject-trial-grid-host");
+    const subjExclude = document.getElementById("subject-trial-exclude");
     const completedSorted = completedAnalyzed
       .slice()
       .sort((a, b) =>
         String(a.fileName).localeCompare(String(b.fileName), "zh-Hant"),
       );
+    const subjectBrowseSorted = completed
+      .slice()
+      .sort((a, b) =>
+        String(a.fileName).localeCompare(String(b.fileName), "zh-Hant"),
+      );
     const subjState = { idx: 0 };
+
+    const savedSubjectKey = trimStr(safeLocalStorageGet(SUBJECT_PICK_STORAGE_KEY));
+    if (savedSubjectKey) {
+      const savedIdx = subjectBrowseSorted.findIndex(
+        (f) => subjectIdentityKey(f) === savedSubjectKey,
+      );
+      if (savedIdx >= 0) subjState.idx = savedIdx;
+    }
 
     function subjectTrialLabelText(f, idx, total) {
       const pid = trimStr(f.participant) || "（無編號）";
@@ -2401,10 +2484,14 @@
 
     function refreshSubjectTrialView() {
       if (!subjGridHost) return;
-      const n = completedSorted.length;
+      const n = subjectBrowseSorted.length;
       if (!n) {
         if (subjToolbar) subjToolbar.style.display = "none";
         if (subjDemo) subjDemo.textContent = "";
+        if (subjExclude) {
+          subjExclude.checked = false;
+          subjExclude.disabled = true;
+        }
         subjGridHost.innerHTML = "";
         const p = document.createElement("p");
         p.className = "subtext";
@@ -2414,9 +2501,19 @@
       }
       if (subjToolbar) subjToolbar.style.display = "flex";
       subjState.idx = Math.max(0, Math.min(subjState.idx, n - 1));
-      const f = completedSorted[subjState.idx];
+      const f = subjectBrowseSorted[subjState.idx];
+      const subjKey = subjectIdentityKey(f);
+      const autoExcludedByAllWrong = excludedAllWrongKeySet.has(subjKey);
+      safeLocalStorageSet(SUBJECT_PICK_STORAGE_KEY, subjKey);
       if (subjLabel) subjLabel.textContent = subjectTrialLabelText(f, subjState.idx, n);
       if (subjDemo) subjDemo.textContent = subjectTrialDemoSummary(f);
+      if (subjExclude) {
+        subjExclude.checked = autoExcludedByAllWrong || manualExcludedSet.has(subjKey);
+        subjExclude.disabled = autoExcludedByAllWrong;
+        subjExclude.title = autoExcludedByAllWrong
+          ? "此受試者因全錯誤已自動排除"
+          : "";
+      }
       const dis = n <= 1;
       if (subjPrev) subjPrev.disabled = dis;
       if (subjNext) subjNext.disabled = dis;
@@ -2426,19 +2523,19 @@
 
     if (subjPrev)
       subjPrev.onclick = function () {
-        const n = completedSorted.length;
+        const n = subjectBrowseSorted.length;
         if (n) subjState.idx = (subjState.idx - 1 + n) % n;
         refreshSubjectTrialView();
       };
     if (subjNext)
       subjNext.onclick = function () {
-        const n = completedSorted.length;
+        const n = subjectBrowseSorted.length;
         if (n) subjState.idx = (subjState.idx + 1) % n;
         refreshSubjectTrialView();
       };
     if (subjRandom)
       subjRandom.onclick = function () {
-        const n = completedSorted.length;
+        const n = subjectBrowseSorted.length;
         if (n < 2) return;
         let r = subjState.idx;
         for (let k = 0; k < 12; k++) {
@@ -2448,10 +2545,30 @@
         subjState.idx = r;
         refreshSubjectTrialView();
       };
+    if (subjExclude)
+      subjExclude.onchange = function () {
+        const n = subjectBrowseSorted.length;
+        if (!n) return;
+        const f = subjectBrowseSorted[subjState.idx];
+        const key = subjectIdentityKey(f);
+        if (!key) return;
+        if (subjExclude.checked) manualExcludedSet.add(key);
+        else manualExcludedSet.delete(key);
+        saveManualExcludedSet(manualExcludedSet);
+        safeLocalStorageSet(SUBJECT_PICK_STORAGE_KEY, key);
+        if (typeof global.LDT_REPORT_RUN === "function") {
+          global.LDT_REPORT_RUN();
+        }
+      };
 
     refreshSubjectTrialView();
 
-    renderQualityTables(qualityHost, q, certUnmappedLines, excludedAllWrongLines);
+    renderQualityTables(
+      qualityHost,
+      q,
+      certUnmappedLines,
+      excludedAllWrongLines.concat(excludedManualLines),
+    );
 
     statusEl.textContent =
       "已載入 " +
