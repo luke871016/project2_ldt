@@ -1995,7 +1995,7 @@
     const totalTrials = completed.reduce((s, f) => s + f.trials.length, 0);
 
     renderStatCards(cardsEl, {
-      manifestCount: paths.length,
+      manifestCount: files.length,
       loadedOk: files.filter((f) => f.ok).length,
       completed: completed.length,
       incomplete: files.filter((f) => f.ok && !f.complete).length,
