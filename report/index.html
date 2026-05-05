@@ -124,6 +124,12 @@
         color: var(--primary);
         margin: 16px 0 8px;
       }
+      h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 18px 0 6px;
+      }
       p,
       .subtext {
         color: var(--subtext);
@@ -246,6 +252,68 @@
       }
       .group-def-list strong {
         color: var(--primary);
+      }
+      .research-lead {
+        background: linear-gradient(135deg, #f0f6fb 0%, #f8fafc 100%);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--accent);
+        border-radius: 0 8px 8px 0;
+        padding: 16px 20px;
+        margin: 0 0 22px;
+        font-size: 15px;
+        color: var(--text);
+        line-height: 1.65;
+      }
+      .research-lead .research-lead-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+      .research-subgrid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 32px;
+        margin: 4px 0 8px;
+      }
+      @media (max-width: 720px) {
+        .research-subgrid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .var-pair-list {
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 12px;
+      }
+      .var-pair-list li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px 14px;
+        padding: 12px 16px;
+        background: var(--light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--text);
+      }
+      .var-pair-list .var-kind {
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        background: var(--primary);
+        padding: 2px 10px;
+        border-radius: 4px;
+      }
+      .var-pair-list .var-detail {
+        flex: 1 1 200px;
+        color: var(--subtext);
       }
       #browse-ab-cards-host {
         margin-top: 10px;
@@ -546,6 +614,7 @@
   <body>
     <nav>
       <span class="brand">台語雙音節 LDT</span>
+      <a href="#sec-background">研究背景</a>
       <a href="#sec-design">題組與題目</a>
       <a href="#sec-summary">摘要</a>
       <a href="#sec-demo">受試者分布</a>
@@ -561,38 +630,92 @@
     <div class="page-wrap">
       <header style="padding-top: 24px">
         <h1>台語雙音節詞彙判斷（LDT）實驗結果</h1>
-        <p class="subtext">
-          僅納入已完成實驗（有 <code>thanksroutine.started</code>）之檔案；每位受試者固定以
-          80 題計。若某題逾時未按鍵，該列可能無按鍵欄位：報表視為錯誤、RT 以 5000
-          ms 計；若 CSV 整列遺失則依試次序號補齊同規則。請由專案根目錄啟動本機 HTTP
-          伺服器後開啟本頁（勿用 file://，否則無法載入 CSV）。
-        </p>
       </header>
 
+      <section id="sec-background">
+        <h2><span class="sec-num">1</span>研究背景</h2>
+        <div class="research-lead">
+          <span class="research-lead-label">問題意識</span>
+          台語使用者判斷詞彙的速度，敢會受著華語影響？
+        </div>
+        <h3>實驗設計 I：軟體與受試者</h3>
+        <div class="research-subgrid">
+          <div>
+            <h4>實驗工具</h4>
+            <ul class="group-def-list">
+              <li><strong>軟體</strong>：PsychoPy（Builder）</li>
+              <li><strong>平台</strong>：Pavlovia（線上實驗）</li>
+            </ul>
+          </div>
+          <div>
+            <h4>受試者條件</h4>
+            <ul class="group-def-list">
+              <li><strong>台文能力</strong>：檢定 B1 以上</li>
+              <li><strong>語言背景</strong>：台華語雙語使用者</li>
+              <li><strong>其他條件</strong>：視覺無礙</li>
+            </ul>
+          </div>
+        </div>
+        <h3>實驗變項</h3>
+        <ul class="var-pair-list">
+          <li>
+            <span class="var-kind">自變項</span>
+            <span class="var-detail">詞彙類型、台語詞頻、華語詞頻</span>
+          </li>
+          <li>
+            <span class="var-kind">依變項</span>
+            <span class="var-detail">反應時間、正確率</span>
+          </li>
+        </ul>
+        <h3>實驗流程佮操作方法</h3>
+        <ul class="group-def-list">
+          <li>螢幕顯示雙音節詞彙</li>
+          <li>要求受試者用上緊的速度做回應</li>
+          <li>受試者用正手揤「J」代表有存在，用倒手揤「F」表示無存在</li>
+          <li>回應時間限制：若是超過 5000ms 無回應，就跳過題目</li>
+          <li>
+            練習流程：正式實驗開始進前，提供四個練習題目，兩個真詞，兩個假詞
+          </li>
+        </ul>
+      </section>
+
       <section id="sec-design">
-        <h2><span class="sec-num">1</span>實驗題組（A–F）說明與題目瀏覽</h2>
+        <h2><span class="sec-num">2</span>實驗題組（A–F）說明與題目瀏覽</h2>
         <p class="subtext">
-          正式實驗中，真正納入分析架構的題目依詞彙性質與詞頻設計分為六類。A–D
-          為「台華共同詞」在華語、台語詞頻（懸／低）上的四種組合；E、F
-          為對照類之純台語詞與假詞。
+          題目設計分為六類。A–D
+          是「台華共同詞」佇華語、台語詞頻（懸／低）的四種組合；E、F
+          是對照類的純台語詞佮假詞。
         </p>
+        <h3>實驗材料：詞頻資料來源佮「懸／低」定義</h3>
+        <h4>詞頻資料來源</h4>
+        <ul class="group-def-list">
+          <li>
+            <strong>台語</strong>：教育部《台語詞彙分級語料庫》未公開資料。
+          </li>
+          <li>
+            <strong>華語</strong>：國家教育研究院 一○○至一○四年常用語詞調查報告書。
+          </li>
+        </ul>
+        <h4>華語的詞頻</h4>
+        <ul class="group-def-list">
+          <li>詞頻懸（PR &gt; 90）</li>
+          <li>詞頻低（PR &lt; 70）</li>
+        </ul>
+        <h4>台語的詞頻</h4>
+        <ul class="group-def-list">
+          <li>詞頻懸（PR &gt; 90）</li>
+          <li>詞頻低（PR &lt; 5）</li>
+        </ul>
+        <h3>題組類別（A–F）</h3>
         <ul class="group-def-list">
           <li><strong>A 組</strong>：台華共同詞；華語詞頻懸、台語詞頻懸。</li>
           <li><strong>B 組</strong>：台華共同詞；華語詞頻懸、台語詞頻低。</li>
           <li><strong>C 組</strong>：台華共同詞；華語詞頻低、台語詞頻懸。</li>
           <li><strong>D 組</strong>：台華共同詞；華語詞頻低、台語詞頻低。</li>
-          <li><strong>E 組</strong>：純台語詞；皆為教育部 700 推薦字詞範圍內之詞彙。</li>
+          <li><strong>E 組</strong>：純台語詞；攏是教育部 700 推薦字詞範圍內之詞彙。</li>
           <li><strong>F 組</strong>：假詞。</li>
         </ul>
-        <div class="note">
-          本頁圖表與「組別（A–F）」欄位係依 CSV 自動對應：<code>實驗材料</code> 列為台華共同詞，並以
-          <code>華語詞頻分組</code>、<code>台語詞頻分組</code>（值為懸／低）對應 A–D；<code>filler_純台語詞</code> 為
-          E；<code>filler_假詞</code> 為 F。若欄位組合無法辨識，會歸入「（其他）」。
-        </div>
-        <h3>依組別瀏覽題目</h3>
-        <p class="subtext">
-          下列為矩陣卡片：來自已完成實驗之檔案、依題目鍵值去重後排序。請以選單或左右箭頭切換組別；真／假詞與華、台詞頻為該組共通設定，顯示於選單與箭頭之後；字卡僅列漢字與臺羅（無欄位名）。
-        </p>
+        <h3>題目分組佮內容</h3>
         <div id="browse-nav-row" class="browse-nav-row" style="display: none">
           <button type="button" id="browse-ab-prev" class="browse-nav-btn" aria-label="上一組" title="上一組">
             ‹
@@ -616,14 +739,13 @@
       </section>
 
       <section id="sec-summary">
-        <h2><span class="sec-num">2</span>載入摘要</h2>
+        <h2><span class="sec-num">3</span>結果摘要</h2>
         <div id="stat-cards"></div>
         <p id="load-status">準備載入…</p>
       </section>
 
       <section id="sec-demo">
-        <h2><span class="sec-num">3</span>受試者：年齡、性別、台語檢定</h2>
-        <p class="subtext">以下僅統計「完成實驗且 80 試次」之受試者。性別已將 M／F 等映射為男／女；其餘歸類為其他。</p>
+        <h2><span class="sec-num">4</span>受試者：年齡、性別、台語檢定</h2>
         <div class="chart-wrap" id="chart-age"></div>
         <div class="chart-row">
           <div class="chart-wrap" id="chart-gender"></div>
@@ -632,7 +754,7 @@
       </section>
 
       <section id="sec-group">
-        <h2><span class="sec-num">4</span>依實驗組別（A–F）聚合</h2>
+        <h2><span class="sec-num">5</span>依實驗組別（A–F）聚合</h2>
         <ul class="group-def-list">
           <li><strong>A 組</strong>：台華共同詞；華語詞頻懸、台語詞頻懸。</li>
           <li><strong>B 組</strong>：台華共同詞；華語詞頻懸、台語詞頻低。</li>
@@ -652,7 +774,7 @@
       </section>
 
       <section id="sec-freq-rm">
-        <h2><span class="sec-num">5</span>華語×台語詞頻（A–D）：對 RT 與正確率之影響與交互作用</h2>
+        <h2><span class="sec-num">6</span>華語×台語詞頻（A–D）：對 RT 與正確率之影響與交互作用</h2>
         <p class="subtext">
           僅分析台華共同詞之四格設計（A：華懸台懸；B：華懸台低；C：華低台懸；D：華低台低）。每位受試者各格計算
           「僅正確試次之平均 RT」與「該格正確率」。統計上視為<strong>受試者內 2（華語詞頻：懸／低）×
@@ -680,10 +802,25 @@
           <div class="chart-wrap" id="chart-freq-rt-heatmap"></div>
           <div class="chart-wrap" id="chart-freq-acc-heatmap"></div>
         </div>
+        <h3>簡單主要效果（simple main effects）</h3>
+        <p id="freq-rm-sme-intro" class="subtext"></p>
+        <div class="note" id="freq-rm-sme-note">
+          於受試者內 2×2
+          設計中，將交互作用拆解為：在台語某一水準下比較華語懸／低（A−C、B−D），以及在華語某一水準下比較台語懸／低（A−B、C−D）。各列仍為受試者內差分之單一樣本
+          t 檢定（df = n−1），與對應之簡單主要效果 F(1, n−1) 等價。同時解讀四項檢定時，整體型一錯誤率可能高於
+          .05；若需保守可另採 Bonferroni 等校正。
+        </div>
+        <div class="data-table-wrap">
+          <table
+            class="data-table"
+            id="freq-rm-simple-effects-table"
+            aria-label="華語與台語詞頻之簡單主要效果檢定"
+          ></table>
+        </div>
       </section>
 
       <section id="sec-items">
-        <h2><span class="sec-num">6</span>題目層級：反應時間與正確率</h2>
+        <h2><span class="sec-num">7</span>逐條題目回答反應時間佮正確率</h2>
         <p class="subtext">
           以題目圖檔（ifile）為主鍵聚合（若無 ifile 則以漢字＋分組＋isword）。僅能以實驗組別
           A–F 篩選；正確率橫條為整體正確比例（0–100%），不另標 SD。RT
@@ -707,7 +844,7 @@
       </section>
 
       <section id="sec-quality">
-        <h2><span class="sec-num">7</span>資料品質與排除說明</h2>
+        <h2><span class="sec-num">8</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
           <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。

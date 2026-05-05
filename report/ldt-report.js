@@ -3,6 +3,8 @@
 
 (function (global) {
   const MANIFEST_URL = "data-manifest.json";
+  /** 由 scripts/build_ldt_dataset.py 產生；存在時只發一次請求 */
+  const DATASET_URL = "ldt-dataset.json";
   const EXPECTED_TRIALS = 80;
   /** 題目最長等待秒數；未按鍵逾時列視為錯誤並以此毫秒計 RT */
   const NO_RESPONSE_RT_MS = 5000;
@@ -286,7 +288,11 @@
     return Math.sqrt(v);
   }
 
-  function processOneFile(text, sourcePath) {
+  /**
+   * @param {Array<Record<string, unknown>>} rows Papa.parse 或合併 JSON 之列資料
+   * @param {string[]} [extraQuality] 先併入 quality 的提示（例如 Papa 解析警告）
+   */
+  function finalizeFromRows(rows, sourcePath, extraQuality) {
     const name = sourcePath.split("/").pop() || sourcePath;
     const out = {
       fileName: name,
@@ -298,31 +304,10 @@
       demo: null,
       formalCount: 0,
       trials: [],
-      quality: [],
+      quality: extraQuality ? extraQuality.slice() : [],
     };
 
-    if (!trimStr(text)) {
-      out.error = "檔案空白";
-      out.quality.push("空白檔案");
-      return out;
-    }
-
-    let parsed;
-    try {
-      parsed = Papa.parse(text, { header: true, skipEmptyLines: "greedy" });
-    } catch (e) {
-      out.error = String(e && e.message ? e.message : e);
-      out.quality.push("CSV 解析失敗");
-      return out;
-    }
-
-    if (parsed.errors && parsed.errors.length) {
-      const msg = parsed.errors[0].message || "parse error";
-      out.quality.push("PapaParse: " + msg);
-    }
-
-    const rows = parsed.data || [];
-    if (!rows.length) {
+    if (!rows || !rows.length) {
       out.error = "無資料列";
       out.quality.push("無資料列");
       return out;
@@ -362,6 +347,46 @@
     }
 
     return out;
+  }
+
+  function processOneFile(text, sourcePath) {
+    const name = sourcePath.split("/").pop() || sourcePath;
+    const out = {
+      fileName: name,
+      sourcePath,
+      ok: false,
+      error: null,
+      complete: false,
+      participant: "",
+      demo: null,
+      formalCount: 0,
+      trials: [],
+      quality: [],
+    };
+
+    if (!trimStr(text)) {
+      out.error = "檔案空白";
+      out.quality.push("空白檔案");
+      return out;
+    }
+
+    let parsed;
+    try {
+      parsed = Papa.parse(text, { header: true, skipEmptyLines: "greedy" });
+    } catch (e) {
+      out.error = String(e && e.message ? e.message : e);
+      out.quality.push("CSV 解析失敗");
+      return out;
+    }
+
+    const quality = [];
+    if (parsed.errors && parsed.errors.length) {
+      const msg = parsed.errors[0].message || "parse error";
+      quality.push("PapaParse: " + msg);
+    }
+
+    const rows = parsed.data || [];
+    return finalizeFromRows(rows, sourcePath, quality);
   }
 
   function mergeQuality(files) {
@@ -766,6 +791,40 @@
     };
   }
 
+  /**
+   * 簡單主要效果（受試者內 2×2）：華語效應在台語懸／低各一對比；台語效應在華語懸／低各一對比。
+   * 台語＝懸：A−C；台語＝低：B−D；華語＝懸：A−B；華語＝低：C−D。
+   */
+  function rm2x2SimpleMainEffects(rows, mode) {
+    const ok = filterCompleteAbcd(rows, mode);
+    const suffix = mode === "rt" ? "_rt" : "_acc";
+    function pull(r, L) {
+      return r[L + suffix];
+    }
+    const dHuaTwXuan = [];
+    const dHuaTwDi = [];
+    const dTwHuaXuan = [];
+    const dTwHuaDi = [];
+    for (let i = 0; i < ok.length; i++) {
+      const r = ok[i];
+      const A = pull(r, "A");
+      const B = pull(r, "B");
+      const C = pull(r, "C");
+      const D = pull(r, "D");
+      dHuaTwXuan.push(A - C);
+      dHuaTwDi.push(B - D);
+      dTwHuaXuan.push(A - B);
+      dTwHuaDi.push(C - D);
+    }
+    return {
+      rowsUsed: ok.length,
+      huaAtTaiXuan: oneSampleTFromDiffs(dHuaTwXuan),
+      huaAtTaiDi: oneSampleTFromDiffs(dHuaTwDi),
+      twAtHuaXuan: oneSampleTFromDiffs(dTwHuaXuan),
+      twAtHuaDi: oneSampleTFromDiffs(dTwHuaDi),
+    };
+  }
+
   function cellMeansAndSem(rows, mode) {
     const letters = ["A", "B", "C", "D"];
     const suffix = mode === "rt" ? "_rt" : "_acc";
@@ -850,6 +909,101 @@
     }
     html += "</tbody>";
     tableEl.innerHTML = html;
+  }
+
+  function renderFreqRmSimpleEffectsTable(tableEl, rtSme, accSme) {
+    if (!tableEl) return;
+    const rows = [
+      {
+        label: "華語（台語＝懸）",
+        contrast: "A − C：華懸台懸 vs 華低台懸",
+        rt: rtSme.huaAtTaiXuan,
+        acc: accSme.huaAtTaiXuan,
+      },
+      {
+        label: "華語（台語＝低）",
+        contrast: "B − D：華懸台低 vs 華低台低",
+        rt: rtSme.huaAtTaiDi,
+        acc: accSme.huaAtTaiDi,
+      },
+      {
+        label: "台語（華語＝懸）",
+        contrast: "A − B：華懸台懸 vs 華懸台低",
+        rt: rtSme.twAtHuaXuan,
+        acc: accSme.twAtHuaXuan,
+      },
+      {
+        label: "台語（華語＝低）",
+        contrast: "C − D：華低台懸 vs 華低台低",
+        rt: rtSme.twAtHuaDi,
+        acc: accSme.twAtHuaDi,
+      },
+    ];
+    let html =
+      "<thead><tr><th>簡單主要效果</th><th>受試者內對比</th><th colspan=\"5\">RT（ms）</th><th colspan=\"5\">正確率</th></tr>";
+    html +=
+      "<tr><th></th><th></th><th>n</th><th>M<sub>diff</sub></th><th>t</th><th>p</th><th>d<sub>z</sub></th><th>n</th><th>M<sub>diff</sub></th><th>t</th><th>p</th><th>d<sub>z</sub></th></tr></thead><tbody>";
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rt = r.rt;
+      const ac = r.acc;
+      html += "<tr><td>" + r.label + "</td><td>" + r.contrast + "</td>";
+      html +=
+        "<td>" +
+        (rt.n != null ? String(rt.n) : "—") +
+        "</td><td>" +
+        fmtNum(rt.mean, 2) +
+        "</td><td>" +
+        fmtNum(rt.t, 3) +
+        "</td><td>" +
+        fmtP(rt.p) +
+        "</td><td>" +
+        fmtNum(rt.dz, 3) +
+        "</td>";
+      html +=
+        "<td>" +
+        (ac.n != null ? String(ac.n) : "—") +
+        "</td><td>" +
+        fmtNum(ac.mean, 4) +
+        "</td><td>" +
+        fmtNum(ac.t, 3) +
+        "</td><td>" +
+        fmtP(ac.p) +
+        "</td><td>" +
+        fmtNum(ac.dz, 3) +
+        "</td></tr>";
+    }
+    html += "</tbody>";
+    tableEl.innerHTML = html;
+  }
+
+  function freqRmSmeIntroText(rtRes, accRes, alpha) {
+    const a = alpha != null ? alpha : 0.05;
+    const sigRt =
+      Number.isFinite(rtRes.interaction.p) && rtRes.interaction.p < a;
+    const sigAcc =
+      Number.isFinite(accRes.interaction.p) && accRes.interaction.p < a;
+    let s =
+      "交互作用對比（A−B−C+D）之結果：RT 之 p = " +
+      fmtP(rtRes.interaction.p) +
+      "；正確率之 p = " +
+      fmtP(accRes.interaction.p) +
+      "（顯著水準 α = " +
+      a +
+      "）。 ";
+    if (sigRt && sigAcc) {
+      s +=
+        "兩指標之交互作用皆達顯著，故將華語、台語主效應分別在另一因子各水準下拆解為下列簡單主要效果。";
+    } else if (sigRt || sigAcc) {
+      s +=
+        "其中" +
+        (sigRt ? "RT" : "正確率") +
+        "之交互作用達顯著；以下簡單主要效果仍一併列出兩指標，以利對照（未顯著者解讀宜保守）。";
+    } else {
+      s +=
+        "此樣本中交互作用未同時於兩指標達上述顯著水準；下列簡單主要效果仍為標準分解方式，供補充檢視。";
+    }
+    return s;
   }
 
   function plotFreqInteractionLines(
@@ -1228,6 +1382,15 @@
       ],
       true,
     );
+
+    const smeIntro = document.getElementById("freq-rm-sme-intro");
+    const smeTable = document.getElementById("freq-rm-simple-effects-table");
+    if (smeIntro) {
+      smeIntro.textContent = freqRmSmeIntroText(rtRes, accRes, 0.05);
+    }
+    const rtSme = rm2x2SimpleMainEffects(rows, "rt");
+    const accSme = rm2x2SimpleMainEffects(rows, "acc");
+    renderFreqRmSimpleEffectsTable(smeTable, rtSme, accSme);
   }
 
   function abGroupsInItemMap(itemMap) {
@@ -1708,43 +1871,86 @@
     const itemCardsHost = document.getElementById("item-cards-host");
     const selItemSort = document.getElementById("filter-item-sort");
 
-    statusEl.textContent = "載入清單…";
+    const files = [];
 
-    let manifest;
+    let usedBundle = false;
     try {
-      const res = await fetch(MANIFEST_URL, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      manifest = await res.json();
+      const resDs = await fetch(DATASET_URL);
+      if (resDs.ok) {
+        const bundle = await resDs.json();
+        if (
+          bundle &&
+          bundle.format === "ldt-report-bundle" &&
+          Array.isArray(bundle.files)
+        ) {
+          usedBundle = true;
+          statusEl.textContent = "載入合併資料集…";
+          const entries = bundle.files;
+          for (let i = 0; i < entries.length; i++) {
+            const ent = entries[i];
+            const p = ent && ent.sourcePath != null ? String(ent.sourcePath) : "";
+            const rows = ent && ent.rows;
+            if (!Array.isArray(rows)) {
+              files.push({
+                fileName: p.split("/").pop() || p || "（未知）",
+                sourcePath: p,
+                ok: false,
+                error: "合併資料集項目缺少 rows 陣列",
+                complete: false,
+                participant: "",
+                demo: null,
+                formalCount: 0,
+                trials: [],
+                quality: ["合併資料集格式錯誤"],
+              });
+              continue;
+            }
+            files.push(finalizeFromRows(rows, p, []));
+          }
+        }
+      }
     } catch (e) {
-      statusEl.textContent =
-        "無法載入 data-manifest.json：" + (e && e.message ? e.message : e);
-      return;
+      usedBundle = false;
     }
 
-    const paths = Array.isArray(manifest.files) ? manifest.files : [];
-    statusEl.textContent = "讀取 " + paths.length + " 個 CSV…";
+    if (!usedBundle) {
+      statusEl.textContent = "載入清單…";
 
-    const files = [];
-    for (let i = 0; i < paths.length; i++) {
-      const p = paths[i];
+      let manifest;
       try {
-        const res = await fetch(encodeURI(p), { cache: "no-store" });
+        const res = await fetch(MANIFEST_URL, { cache: "no-store" });
         if (!res.ok) throw new Error("HTTP " + res.status);
-        const text = await res.text();
-        files.push(processOneFile(text, p));
+        manifest = await res.json();
       } catch (e) {
-        files.push({
-          fileName: p.split("/").pop(),
-          sourcePath: p,
-          ok: false,
-          error: e && e.message ? e.message : String(e),
-          complete: false,
-          participant: "",
-          demo: null,
-          formalCount: 0,
-          trials: [],
-          quality: ["無法 fetch 檔案"],
-        });
+        statusEl.textContent =
+          "無法載入 data-manifest.json：" + (e && e.message ? e.message : e);
+        return;
+      }
+
+      const paths = Array.isArray(manifest.files) ? manifest.files : [];
+      statusEl.textContent = "讀取 " + paths.length + " 個 CSV…";
+
+      for (let i = 0; i < paths.length; i++) {
+        const p = paths[i];
+        try {
+          const res = await fetch(encodeURI(p), { cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const text = await res.text();
+          files.push(processOneFile(text, p));
+        } catch (e) {
+          files.push({
+            fileName: p.split("/").pop(),
+            sourcePath: p,
+            ok: false,
+            error: e && e.message ? e.message : String(e),
+            complete: false,
+            participant: "",
+            demo: null,
+            formalCount: 0,
+            trials: [],
+            quality: ["無法 fetch 檔案"],
+          });
+        }
       }
     }
 
