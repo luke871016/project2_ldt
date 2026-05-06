@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
-    <script src="ldt-report.js" defer></script>
+    <script src="ldt-report.js?v=1.1" defer></script>
     <style>
       :root {
         --primary: #2c3e50;
@@ -748,6 +748,59 @@
         flex-direction: column;
         gap: 0;
         min-width: 0;
+      }
+      .subject-trial-meta-host {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+      .subject-trial-meta-row--wordtype {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(5, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .subject-trial-meta-seg {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 5px 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        box-sizing: border-box;
+      }
+      .subject-trial-meta-seg--real {
+        grid-column: 1 / span 5;
+        background: rgba(30, 132, 73, 0.12);
+        color: #1b5e32;
+      }
+      .subject-trial-meta-seg--pseudo {
+        grid-column: 6 / span 5;
+        background: rgba(192, 57, 43, 0.1);
+        color: #922b21;
+      }
+      .subject-trial-meta-row--freq {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(5, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .subject-trial-meta-freq-cell {
+        text-align: center;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 4px 2px;
+        border-radius: 5px;
+        border: 1px solid rgba(44, 62, 80, 0.18);
+        background: #fff;
+        color: var(--primary);
+        box-sizing: border-box;
+      }
+      .subject-trial-meta-freq-cell--f {
+        grid-column: span 5;
+        color: var(--subtext);
+        font-weight: 500;
+        background: #f4f6f8;
       }
       .subject-trial-col-headers {
         display: grid;

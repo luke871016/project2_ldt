@@ -25,6 +25,22 @@
     F: "假詞。",
   };
 
+  /** 單人八十題格狀圖上方：與欄位對齊之簡要標籤（E 組非 2×2 詞頻操弄，F 為假詞） */
+  const SUBJECT_TRIAL_META_HUA = {
+    A: "華語懸頻",
+    B: "華語懸頻",
+    C: "華語低頻",
+    D: "華語低頻",
+    E: "純台語詞",
+  };
+  const SUBJECT_TRIAL_META_TW = {
+    A: "台語懸頻",
+    B: "台語低頻",
+    C: "台語懸頻",
+    D: "台語低頻",
+    E: "純台語詞",
+  };
+
   function abGroupDefinitionText(lab) {
     if (AB_GROUP_DESC[lab]) return AB_GROUP_DESC[lab];
     return "無法依 A–F 規則歸類之試次（如缺欄或欄位組合與 CSV 分組異常）。";
@@ -1860,6 +1876,49 @@
     const wrap = document.createElement("div");
     wrap.className = "subject-trial-grid-wrap";
 
+    const metaHost = document.createElement("div");
+    metaHost.className = "subject-trial-meta-host";
+    metaHost.setAttribute("aria-label", "組別條件對照（真／假詞、華語與台語詞頻）");
+
+    const rowWord = document.createElement("div");
+    rowWord.className = "subject-trial-meta-row subject-trial-meta-row--wordtype";
+    const segReal = document.createElement("div");
+    segReal.className = "subject-trial-meta-seg subject-trial-meta-seg--real";
+    segReal.textContent = "真詞";
+    segReal.title = "A–E 組皆為真詞（含台華共同詞與純台語詞）";
+    const segPseudo = document.createElement("div");
+    segPseudo.className = "subject-trial-meta-seg subject-trial-meta-seg--pseudo";
+    segPseudo.textContent = "假詞";
+    segPseudo.title = AB_GROUP_DESC.F;
+    rowWord.appendChild(segReal);
+    rowWord.appendChild(segPseudo);
+    metaHost.appendChild(rowWord);
+
+    function appendMetaFreqRow(kind, map) {
+      const row = document.createElement("div");
+      row.className =
+        "subject-trial-meta-row subject-trial-meta-row--freq";
+      row.setAttribute("aria-label", kind);
+      const labs = ["A", "B", "C", "D", "E"];
+      for (let i = 0; i < labs.length; i++) {
+        const g = labs[i];
+        const cell = document.createElement("div");
+        cell.className = "subject-trial-meta-freq-cell";
+        cell.textContent = map[g];
+        cell.title = g + " 組：" + AB_GROUP_DESC[g];
+        row.appendChild(cell);
+      }
+      const fCell = document.createElement("div");
+      fCell.className =
+        "subject-trial-meta-freq-cell subject-trial-meta-freq-cell--f";
+      fCell.textContent = "—";
+      fCell.title = "F 組為假詞，無華／台詞頻操弄";
+      row.appendChild(fCell);
+      metaHost.appendChild(row);
+    }
+    appendMetaFreqRow("各欄華語詞頻水準", SUBJECT_TRIAL_META_HUA);
+    appendMetaFreqRow("各欄台語詞頻水準", SUBJECT_TRIAL_META_TW);
+
     const headers = document.createElement("div");
     headers.className = "subject-trial-col-headers";
     const labels = ["A", "B", "C", "D", "E"];
@@ -1907,6 +1966,7 @@
       }
     }
 
+    wrap.appendChild(metaHost);
     wrap.appendChild(headers);
     wrap.appendChild(grid);
     host.appendChild(wrap);
