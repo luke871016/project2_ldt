@@ -257,6 +257,58 @@
       .group-def-list strong {
         color: var(--primary);
       }
+      /* 結論：簡報用網格字卡 */
+      .conclusion-deck {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 20px;
+        margin: 6px 0 2px;
+      }
+      @media (max-width: 768px) {
+        .conclusion-deck {
+          grid-template-columns: 1fr;
+        }
+      }
+      .conclusion-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 22px 24px;
+        min-height: 112px;
+        background: linear-gradient(145deg, #ffffff 0%, #f4f8fc 100%);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        border-left: 5px solid var(--accent);
+        box-shadow: 0 3px 14px rgba(44, 62, 80, 0.08);
+      }
+      .conclusion-card__num {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 800;
+        font-size: 17px;
+        line-height: 1;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(41, 128, 185, 0.35);
+      }
+      .conclusion-card__body {
+        flex: 1;
+        min-width: 0;
+      }
+      .conclusion-card__text {
+        margin: 0;
+        font-family: var(--font-stimuli);
+        font-size: clamp(15px, 1.15vw, 18px);
+        font-weight: 500;
+        line-height: 1.68;
+        color: var(--text);
+        letter-spacing: 0.01em;
+      }
       .research-lead {
         background: linear-gradient(135deg, #f0f6fb 0%, #f8fafc 100%);
         border: 1px solid var(--border);
@@ -826,6 +878,7 @@
       <a href="#sec-freq-rm">華×台詞頻</a>
       <a href="#sec-items">題目統計</a>
       <a href="#sec-subject-trials">單人作答</a>
+      <a href="#sec-conclusion">結論</a>
       <a href="#sec-quality">資料品質</a>
       <div class="nav-actions">
         <button type="button" id="btn-reload" style="opacity: 0;">重新載入</button>
@@ -1107,8 +1160,44 @@
         </div>
       </section>
 
+      <section id="sec-conclusion" aria-labelledby="sec-conclusion-heading">
+        <h2 id="sec-conclusion-heading"><span class="sec-num">9</span>結論</h2>
+        <div class="conclusion-deck" role="list">
+          <div class="conclusion-card" role="listitem">
+            <span class="conclusion-card__num" aria-hidden="true">1</span>
+            <div class="conclusion-card__body">
+              <p class="conclusion-card__text">
+                平平是台華共同詞，台語的詞頻猶是上主要影響受試者表現的因素。
+              </p>
+            </div>
+          </div>
+          <div class="conclusion-card" role="listitem">
+            <span class="conclusion-card__num" aria-hidden="true">2</span>
+            <div class="conclusion-card__body">
+              <p class="conclusion-card__text">詞頻愈懸就判斷愈緊，正確率愈懸。</p>
+            </div>
+          </div>
+          <div class="conclusion-card" role="listitem">
+            <span class="conclusion-card__num" aria-hidden="true">3</span>
+            <div class="conclusion-card__body">
+              <p class="conclusion-card__text">
+                華語的詞頻猶是有影響，若是台語的詞頻仝款，華語詞頻懸的詞嘛反應速度較緊正確率較懸。
+              </p>
+            </div>
+          </div>
+          <div class="conclusion-card" role="listitem">
+            <span class="conclusion-card__num" aria-hidden="true">4</span>
+            <div class="conclusion-card__body">
+              <p class="conclusion-card__text">
+                佇台語詞頻低的分組內底，華語詞頻的影響比台語詞頻懸的分組閣較大。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="sec-quality">
-        <h2><span class="sec-num">9</span>資料品質與排除說明</h2>
+        <h2><span class="sec-num">10</span>資料品質與排除說明</h2>
         <div class="note">
           未完成實驗（無 <code>thanksroutine.started</code>）的檔案不納入統計。已完成者若
           <code>trials.length</code> 仍不為 80（理論上不應發生）會列於「試次數異常」。另：正式試次中<strong>無任一筆正確</strong>（可能全按反或皆逾時）之完成檔，自回答與聚合分析排除，並列於下方「全錯誤排除」。
