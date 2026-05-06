@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
-    <script src="ldt-report.js?v=1.1" defer></script>
+    <script src="ldt-report.js?v=1.3" defer></script>
     <style>
       :root {
         --primary: #2c3e50;
@@ -796,11 +796,29 @@
         color: var(--primary);
         box-sizing: border-box;
       }
+      /* 單一受試者格狀圖：詞頻顏色與全站 `stim-tag--freq-*` 對齊 */
+      .subject-trial-meta-freq-cell.stim-tag--freq-xuan {
+        background: #ebf5fb;
+        color: var(--accent);
+        border: 1px solid rgba(41, 128, 185, 0.35);
+      }
+      .subject-trial-meta-freq-cell.stim-tag--freq-di {
+        background: #eef1f5;
+        color: var(--subtext);
+        border: 1px solid var(--border);
+      }
+      .subject-trial-meta-freq-cell.stim-tag--freq-other {
+        background: var(--light);
+        color: var(--text);
+        border: 1px solid var(--border);
+        font-weight: 600;
+      }
       .subject-trial-meta-freq-cell--f {
         grid-column: span 5;
         color: var(--subtext);
         font-weight: 500;
         background: #f4f6f8;
+        border-color: rgba(44, 62, 80, 0.14);
       }
       .subject-trial-col-headers {
         display: grid;

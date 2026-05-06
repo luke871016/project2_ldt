@@ -1904,7 +1904,13 @@
         const g = labs[i];
         const cell = document.createElement("div");
         cell.className = "subject-trial-meta-freq-cell";
-        cell.textContent = map[g];
+        const val = map[g];
+        cell.textContent = val;
+        // 詞頻顏色邏輯統一：懸頻使用 `stim-tag--freq-xuan`，低頻使用 `stim-tag--freq-di`。
+        // 其餘值（如純台組 / 未知）使用 `stim-tag--freq-other`。
+        if (/懸/.test(val)) cell.classList.add("stim-tag--freq-xuan");
+        else if (/低/.test(val)) cell.classList.add("stim-tag--freq-di");
+        else cell.classList.add("stim-tag--freq-other");
         cell.title = g + " 組：" + AB_GROUP_DESC[g];
         row.appendChild(cell);
       }
